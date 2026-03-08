@@ -1,0 +1,99 @@
+root@srv1235745:~/randoli-solar# git pull origin main
+remote: Enumerating objects: 77, done.
+remote: Counting objects: 100% (77/77), done.
+remote: Compressing objects: 100% (15/15), done.
+remote: Total 51 (delta 36), reused 48 (delta 35), pack-reused 0 (from 0)
+Unpacking objects: 100% (51/51), 25.45 KiB | 814.00 KiB/s, done.
+From https://github.com/icarorandoli/randoli-solar-v3
+ * branch            main       -> FETCH_HEAD
+   5af131d..d75b70b  main       -> origin/main
+Updating 5af131d..d75b70b
+Fast-forward
+ .replit                                     |  39 ++++++++++++
+ README.md                                   | 165 +++++++++++++++++++++++++++++++++++++++++++++++-
+ client/src/components/admin-sidebar.tsx     |  15 ++++-
+ client/src/components/chat-panel.tsx        | 134 +++++++++++++++++++++++++++++++++++++++
+ client/src/components/password-strength.tsx |  43 +++++++++++++
+ client/src/components/portal-sidebar.tsx    |  17 ++++-
+ client/src/hooks/use-websocket.ts           |  82 ++++++++++++++++++++++++
+ client/src/lib/utils.ts                     |  91 ++++++++++++++++++++++++++
+ client/src/pages/clients.tsx                | 107 ++++++++++++++++++++++++++-----
+ client/src/pages/completar-perfil.tsx       |  10 +++
+ client/src/pages/portal/conta.tsx           |   3 +-
+ client/src/pages/portal/novo-projeto.tsx    |  56 +++++++++++++++-
+ client/src/pages/portal/projeto.tsx         |  16 +++++
+ client/src/pages/projects.tsx               |  17 +++++
+ client/src/pages/register.tsx               |  70 +++++++++++++++++++-
+ client/src/pages/users.tsx                  |  55 +++++++++-------
+ replit.md                                   |  18 ++++--
+ server/index.ts                             |   2 +
+ server/routes.ts                            |  52 +++++++++++++++
+ server/storage.ts                           |  43 ++++++++++++-
+ server/websocket.ts                         |  85 +++++++++++++++++++++++++
+ shared/schema.ts                            |  28 ++++++++
+ 22 files changed, 1092 insertions(+), 56 deletions(-)
+ create mode 100644 .replit
+ create mode 100644 client/src/components/chat-panel.tsx
+ create mode 100644 client/src/components/password-strength.tsx
+ create mode 100644 client/src/hooks/use-websocket.ts
+ create mode 100644 server/websocket.ts
+root@srv1235745:~/randoli-solar# npm install
+
+up to date, audited 633 packages in 2s
+
+101 packages are looking for funding
+  run `npm fund` for details
+
+8 vulnerabilities (6 low, 2 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+root@srv1235745:~/randoli-solar# npm run db:push
+
+> rest-express@1.0.0 db:push
+> drizzle-kit push
+
+No config path provided, using default 'drizzle.config.ts'
+Reading config file '/root/randoli-solar/drizzle.config.ts'
+Using 'pg' driver for database querying
+[✓] Pulling schema from database...
++ chat_messages table will be created
+--- all table conflicts resolved ---
+
+ Warning  Found data-loss statements:
+· You're about to delete session table with 7 items
+
+THIS ACTION WILL CAUSE DATA LOSS AND CANNOT BE REVERTED
+
+Do you still want to push changes?
+error: must be owner of table client_pricing
+    at /root/randoli-solar/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Object.query (/root/randoli-solar/node_modules/drizzle-kit/bin.cjs:80622:26)
+    at async pgPush (/root/randoli-solar/node_modules/drizzle-kit/bin.cjs:84432:13)
+    at async Object.handler (/root/randoli-solar/node_modules/drizzle-kit/bin.cjs:93871:9)
+    at async run (/root/randoli-solar/node_modules/drizzle-kit/bin.cjs:93117:7) {
+  length: 97,
+  severity: 'ERROR',
+  code: '42501',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'aclchk.c',
+  line: '2950',
+  routine: 'aclcheck_error'
+}
+root@srv1235745:~/randoli-solar#

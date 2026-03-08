@@ -1,0 +1,151 @@
+root@srv1235745:~/randoli-solar# psql "postgresql://randoli:Icba281287%40@localhost:5432/randoli_solar" << 'EOF'
+> ALTER TABLE clients ADD COLUMN IF NOT EXISTS rua TEXT;
+> ALTER TABLE clients ADD COLUMN IF NOT EXISTS numero TEXT;
+> ALTER TABLE clients ADD COLUMN IF NOT EXISTS bairro TEXT;
+> ALTER TABLE clients ADD COLUMN IF NOT EXISTS cep TEXT;
+> ALTER TABLE clients ADD COLUMN IF NOT EXISTS cidade TEXT;
+> ALTER TABLE clients ADD COLUMN IF NOT EXISTS estado TEXT;
+>
+> ALTER TABLE users ADD COLUMN IF NOT EXISTS rua TEXT;
+> ALTER TABLE users ADD COLUMN IF NOT EXISTS numero TEXT;
+> ALTER TABLE users ADD COLUMN IF NOT EXISTS bairro TEXT;
+> ALTER TABLE users ADD COLUMN IF NOT EXISTS cep TEXT;
+> ALTER TABLE users ADD COLUMN IF NOT EXISTS cidade TEXT;
+> ALTER TABLE users ADD COLUMN IF NOT EXISTS estado TEXT;
+>
+> ALTER TABLE projects ADD COLUMN IF NOT EXISTS rua TEXT;
+> ALTER TABLE projects ADD COLUMN IF NOT EXISTS numero TEXT;
+> ALTER TABLE projects ADD COLUMN IF NOT EXISTS bairro TEXT;
+> ALTER TABLE projects ADD COLUMN IF NOT EXISTS cep TEXT;
+> ALTER TABLE projects ADD COLUMN IF NOT EXISTS cidade TEXT;
+> ALTER TABLE projects ADD COLUMN IF NOT EXISTS estado TEXT;
+> ALTER TABLE projects ADD COLUMN IF NOT EXISTS numero_protocolo TEXT;
+> ALTER TABLE projects ADD COLUMN IF NOT EXISTS numero_instalacao TEXT;
+>
+> CREATE TABLE IF NOT EXISTS chat_messages (
+>   id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+>   project_id VARCHAR NOT NULL REFERENCES projects(id),
+>   sender_id VARCHAR NOT NULL REFERENCES users(id),
+>   sender_name TEXT NOT NULL,
+>   sender_role TEXT NOT NULL,
+>   content TEXT NOT NULL,
+>   read_by_admin BOOLEAN NOT NULL DEFAULT FALSE,
+>   read_by_integrador BOOLEAN NOT NULL DEFAULT FALSE,
+>   created_at TIMESTAMP DEFAULT NOW()
+> );
+> EOF
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+NOTICE:  column "rua" of relation "users" already exists, skipping
+ALTER TABLE
+NOTICE:  column "numero" of relation "users" already exists, skipping
+ALTER TABLE
+NOTICE:  column "bairro" of relation "users" already exists, skipping
+ALTER TABLE
+NOTICE:  column "cep" of relation "users" already exists, skipping
+ALTER TABLE
+NOTICE:  column "cidade" of relation "users" already exists, skipping
+ALTER TABLE
+NOTICE:  column "estado" of relation "users" already exists, skipping
+ALTER TABLE
+NOTICE:  column "rua" of relation "projects" already exists, skipping
+ALTER TABLE
+NOTICE:  column "numero" of relation "projects" already exists, skipping
+ALTER TABLE
+NOTICE:  column "bairro" of relation "projects" already exists, skipping
+ALTER TABLE
+NOTICE:  column "cep" of relation "projects" already exists, skipping
+ALTER TABLE
+NOTICE:  column "cidade" of relation "projects" already exists, skipping
+ALTER TABLE
+NOTICE:  column "estado" of relation "projects" already exists, skipping
+ALTER TABLE
+NOTICE:  column "numero_protocolo" of relation "projects" already exists, skipping
+ALTER TABLE
+NOTICE:  column "numero_instalacao" of relation "projects" already exists, skipping
+ALTER TABLE
+NOTICE:  relation "chat_messages" already exists, skipping
+CREATE TABLE
+root@srv1235745:~/randoli-solar# psql "postgresql://randoli:Icba281287%40@localhost:5432/randoli_solar" << 'EOF'
+> ALTER TABLE clients ADD COLUMN IF NOT EXISTS rua TEXT;
+> ALTER TABLE clients ADD COLUMN IF NOT EXISTS numero TEXT;
+> ALTER TABLE clients ADD COLUMN IF NOT EXISTS bairro TEXT;
+> ALTER TABLE clients ADD COLUMN IF NOT EXISTS cep TEXT;
+> ALTER TABLE clients ADD COLUMN IF NOT EXISTS cidade TEXT;
+> ALTER TABLE clients ADD COLUMN IF NOT EXISTS estado TEXT;
+>
+> ALTER TABLE users ADD COLUMN IF NOT EXISTS rua TEXT;
+> ALTER TABLE users ADD COLUMN IF NOT EXISTS numero TEXT;
+> ALTER TABLE users ADD COLUMN IF NOT EXISTS bairro TEXT;
+> ALTER TABLE users ADD COLUMN IF NOT EXISTS cep TEXT;
+> ALTER TABLE users ADD COLUMN IF NOT EXISTS cidade TEXT;
+> ALTER TABLE users ADD COLUMN IF NOT EXISTS estado TEXT;
+>
+> ALTER TABLE projects ADD COLUMN IF NOT EXISTS rua TEXT;
+> ALTER TABLE projects ADD COLUMN IF NOT EXISTS numero TEXT;
+> ALTER TABLE projects ADD COLUMN IF NOT EXISTS bairro TEXT;
+> ALTER TABLE projects ADD COLUMN IF NOT EXISTS cep TEXT;
+> ALTER TABLE projects ADD COLUMN IF NOT EXISTS cidade TEXT;
+> ALTER TABLE projects ADD COLUMN IF NOT EXISTS estado TEXT;
+> ALTER TABLE projects ADD COLUMN IF NOT EXISTS numero_protocolo TEXT;
+> ALTER TABLE projects ADD COLUMN IF NOT EXISTS numero_instalacao TEXT;
+>
+> CREATE TABLE IF NOT EXISTS chat_messages (
+>   id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+>   project_id VARCHAR NOT NULL REFERENCES projects(id),
+>   sender_id VARCHAR NOT NULL REFERENCES users(id),
+>   sender_name TEXT NOT NULL,
+>   sender_role TEXT NOT NULL,
+>   content TEXT NOT NULL,
+>   read_by_admin BOOLEAN NOT NULL DEFAULT FALSE,
+>   read_by_integrador BOOLEAN NOT NULL DEFAULT FALSE,
+>   created_at TIMESTAMP DEFAULT NOW()
+> );
+> EOF
+NOTICE:  column "rua" of relation "clients" already exists, skipping
+ALTER TABLE
+NOTICE:  column "numero" of relation "clients" already exists, skipping
+ALTER TABLE
+NOTICE:  column "bairro" of relation "clients" already exists, skipping
+ALTER TABLE
+NOTICE:  column "cep" of relation "clients" already exists, skipping
+ALTER TABLE
+NOTICE:  column "cidade" of relation "clients" already exists, skipping
+ALTER TABLE
+NOTICE:  column "estado" of relation "clients" already exists, skipping
+ALTER TABLE
+NOTICE:  column "rua" of relation "users" already exists, skipping
+ALTER TABLE
+NOTICE:  column "numero" of relation "users" already exists, skipping
+ALTER TABLE
+NOTICE:  column "bairro" of relation "users" already exists, skipping
+ALTER TABLE
+NOTICE:  column "cep" of relation "users" already exists, skipping
+ALTER TABLE
+NOTICE:  column "cidade" of relation "users" already exists, skipping
+ALTER TABLE
+NOTICE:  column "estado" of relation "users" already exists, skipping
+ALTER TABLE
+NOTICE:  column "rua" of relation "projects" already exists, skipping
+ALTER TABLE
+NOTICE:  column "numero" of relation "projects" already exists, skipping
+ALTER TABLE
+NOTICE:  column "bairro" of relation "projects" already exists, skipping
+ALTER TABLE
+NOTICE:  column "cep" of relation "projects" already exists, skipping
+ALTER TABLE
+NOTICE:  column "cidade" of relation "projects" already exists, skipping
+ALTER TABLE
+NOTICE:  column "estado" of relation "projects" already exists, skipping
+ALTER TABLE
+NOTICE:  column "numero_protocolo" of relation "projects" already exists, skipping
+ALTER TABLE
+NOTICE:  column "numero_instalacao" of relation "projects" already exists, skipping
+ALTER TABLE
+NOTICE:  relation "chat_messages" already exists, skipping
+CREATE TABLE
+root@srv1235745:~/randoli-solar#

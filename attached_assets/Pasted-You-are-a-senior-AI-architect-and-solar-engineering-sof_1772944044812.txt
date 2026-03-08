@@ -1,0 +1,324 @@
+You are a senior AI architect and solar engineering software developer.
+
+The repository is a SaaS platform used to manage photovoltaic engineering projects.
+
+The system currently includes:
+
+- project management
+- document uploads
+- integrator portal
+- admin portal
+- payments
+- chat
+- timeline
+- Kanban
+
+Your task is to implement an AI-powered solar engineering system inside the platform.
+
+The goal is to automate photovoltaic engineering tasks using AI and algorithms.
+
+Do not break existing functionality.
+
+-------------------------------------
+
+1) CREATE AI ENGINE MODULE
+
+Create a new folder:
+
+server/ai/
+
+Files:
+
+solar-calculator.ts
+solar-dimensioning.ts
+memorial-generator.ts
+unifilar-generator.ts
+concessionaria-docs.ts
+energy-analysis.ts
+
+This module will power all intelligent solar features.
+
+-------------------------------------
+
+2) ENERGY BILL ANALYZER (AI)
+
+Create a system that can analyze uploaded electricity bills.
+
+When the user uploads a bill:
+
+documents type = conta_energia
+
+The AI module must extract:
+
+consumer unit number
+monthly consumption history
+average consumption
+tariff group
+phase type (mono, bi, tri)
+
+Implement parsing support for:
+
+PDF
+Image (OCR)
+
+Create endpoint:
+
+POST /api/v1/ai/analyze-bill
+
+Return:
+
+average consumption
+recommended system size
+estimated production
+
+-------------------------------------
+
+3) SOLAR SYSTEM SIZING ENGINE
+
+Create intelligent sizing algorithm.
+
+Inputs:
+
+average consumption
+city
+state
+roof orientation
+system efficiency
+
+Algorithm should estimate:
+
+required kWp
+number of panels
+inverter size
+estimated generation
+
+Return:
+
+{
+recommended_kwp
+panels_needed
+inverter_power
+monthly_generation
+annual_generation
+}
+
+-------------------------------------
+
+4) SOLAR IRRADIATION DATABASE
+
+Add irradiation dataset.
+
+Create table:
+
+solar_irradiation
+
+Fields:
+
+city
+state
+irradiation_kwh_m2_day
+
+Use Brazilian solar irradiation averages.
+
+Use this data for generation calculations.
+
+-------------------------------------
+
+5) MEMORIAL DESCRITIVO GENERATOR (AI)
+
+Create automatic generator for:
+
+memorial descritivo fotovoltaico.
+
+Endpoint:
+
+POST /api/v1/ai/generate-memorial
+
+Inputs:
+
+projectId
+
+Output:
+
+text ready for engineering submission.
+
+Include:
+
+system power
+inverter model
+panel model
+installation location
+generation estimate
+technical description
+
+Return:
+
+PDF + text.
+
+-------------------------------------
+
+6) UNIFILAR DIAGRAM GENERATOR
+
+Automatically generate basic unifilar diagrams.
+
+Inputs:
+
+panel quantity
+inverter
+string configuration
+connection type
+
+Generate:
+
+SVG diagram
+PNG export
+
+Endpoint:
+
+POST /api/v1/ai/generate-unifilar
+
+-------------------------------------
+
+7) SOLAR PRODUCTION SIMULATION
+
+Create simulation engine.
+
+Inputs:
+
+location
+system size
+tilt
+orientation
+
+Return:
+
+monthly production forecast.
+
+Endpoint:
+
+GET /api/v1/ai/production-simulation
+
+-------------------------------------
+
+8) SMART PROJECT CREATION
+
+When user creates a project:
+
+Automatically run AI pipeline:
+
+1 analyze energy bill
+2 calculate system size
+3 suggest equipment
+4 estimate generation
+5 generate engineering summary
+
+-------------------------------------
+
+9) EQUIPMENT SUGGESTION ENGINE
+
+Create equipment database.
+
+Tables:
+
+solar_panels
+solar_inverters
+
+Store:
+
+brand
+model
+power
+efficiency
+voltage
+mppt_range
+
+AI should recommend best equipment combination.
+
+-------------------------------------
+
+10) AI CHAT ENGINEER
+
+Extend existing chat system.
+
+Create role:
+
+AI Engineer
+
+Users can ask:
+
+"Qual inversor usar nesse projeto?"
+
+"Quantos painéis preciso?"
+
+"Qual geração estimada?"
+
+The AI should respond based on project data.
+
+-------------------------------------
+
+11) AUTOMATIC PROJECT REPORT
+
+Create button:
+
+Generate Engineering Report.
+
+Output PDF containing:
+
+client info
+system size
+generation estimate
+equipment
+unifilar diagram
+memorial descritivo
+
+-------------------------------------
+
+12) PERFORMANCE OPTIMIZATION
+
+Heavy AI calculations must run in background workers.
+
+Create queue:
+
+engineering_jobs
+
+Use background job processing.
+
+-------------------------------------
+
+13) FRONTEND FEATURES
+
+Add new pages:
+
+AI Solar Calculator
+Production Simulator
+Equipment Database
+Engineering Reports
+AI Assistant
+
+-------------------------------------
+
+14) KEEP CURRENT FEATURES WORKING
+
+Do not break:
+
+projects
+kanban
+documents
+timeline
+payments
+chat
+integrator portal
+
+-------------------------------------
+
+After implementing everything:
+
+Run:
+
+npm run check
+
+Then:
+
+npm run build
+
+Ensure application compiles correctly.

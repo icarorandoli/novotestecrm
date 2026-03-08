@@ -1,0 +1,96 @@
+root@srv1235745:~# cd ~/randoli-solar && node -e "
+> const fs = require('fs');
+>
+> // === PATCH 1: routes.ts ===
+> let routes = fs.readFileSync('server/routes.ts', 'utf8');
+>
+> // Fix import
+> routes = routes.replace(
+>   'import { sendStatusEmail, sendTestEmail, sendPasswordResetEmail, type EmailConfig }',
+>   'import { sendStatusEmail, sendTestEmail, sendPasswordResetEmail, sendDocumentEmail, sendTimelineEmail, type EmailConfig }'
+> );
+>
+> // Add document email notification
+> if (!routes.includes('isAdminUpload')) {
+-bash: !routes.includes: event not found
+>   routes = routes.replace(
+>     \"      res.status(201).json(doc);\n    } catch (err: any) { res.status(400).json({ error: err.message }); }\n  });\n\n  app.delete\",
+>     \`      // Email notification to integrador when admin uploads a document
+>       const isAdminUpload = user && ['admin', 'engenharia', 'financeiro'].includes(user.role);
+>       if (isAdminUpload) {
+>         const project = await storage.getProject(req.params.id);
+>         if (project) {
+>           const integradorEmail = project.integrador?.email || project.client?.email;
+>           const integradorName = project.integrador?.name || project.client?.name || 'Integrador';
+>           if (integradorEmail) {
+>             getEmailConfig().then(emailConfig => sendDocumentEmail({
+>               to: integradorEmail,
+>               integradorName,
+>               projectTitle: project.title,
+>               ticketNumber: project.ticketNumber,
+>               documentName: doc.name,
+>               uploadedBy: 'Randoli Engenharia Solar',
+>               config: emailConfig,
+>             })).catch(err => console.error('[email] Falha ao enviar notificacao de documento:', err));
+>           }
+>         }
+>       }
+>
+>       res.status(201).json(doc);
+>     } catch (err: any) { res.status(400).json({ error: err.message }); }
+>   });
+>
+>   app.delete\`
+>   );
+> }
+>
+> // Add timeline email notification
+> if (!routes.includes('isAdminAction')) {
+-bash: !routes.includes: event not found
+>   routes = routes.replace(
+>     \"      res.status(201).json(entry);\n    } catch (err: any) { res.status(400).json({ error: err.message }); }\n  });\n\n  // ── PARTNERS\",
+>     \`      // Email notification to integrador when admin adds a timeline note
+>       const isAdminAction = user && ['admin', 'engenharia', 'financeiro'].includes(user.role);
+>       if (isAdminAction) {
+>         const project = await storage.getProject(req.params.id);
+>         if (project) {
+>           const integradorEmail = project.integrador?.email || project.client?.email;
+>           const integradorName = project.integrador?.name || project.client?.name || 'Integrador';
+>           if (integradorEmail) {
+>             getEmailConfig().then(emailConfig => sendTimelineEmail({
+>               to: integradorEmail,
+>               integradorName,
+>               projectTitle: project.title,
+>               ticketNumber: project.ticketNumber,
+>               event: req.body.event,
+>               details: req.body.details,
+>               config: emailConfig,
+>             })).catch(err => console.error('[email] Falha ao enviar notificacao de historico:', err));
+>           }
+>         }
+>       }
+>
+>       res.status(201).json(entry);
+>     } catch (err: any) { res.status(400).json({ error: err.message }); }
+>   });
+>
+>   // ── PARTNERS\`
+>   );
+> }
+>
+> fs.writeFileSync('server/routes.ts', routes);
+> console.log('routes.ts atualizado!');
+> "
+[eval]:43
+}
+^
+
+SyntaxError: Unexpected token '}'
+    at makeContextifyScript (node:internal/vm:185:14)
+    at node:internal/process/execution:107:22
+    at [eval]-wrapper:6:24
+    at runScript (node:internal/process/execution:101:62)
+    at evalScript (node:internal/process/execution:133:3)
+    at node:internal/main/eval_string:51:3
+
+Node.js v20.20.0

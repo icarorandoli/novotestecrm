@@ -1,0 +1,390 @@
+You are a senior SaaS architect and full-stack engineer.
+
+The repository is a photovoltaic project management SaaS.
+
+Stack:
+
+Backend
+Node.js
+Express
+TypeScript
+Drizzle ORM
+PostgreSQL
+
+Frontend
+React
+Vite
+Tailwind
+React Query
+
+Your task is to transform this application into a **professional scalable SaaS architecture**.
+
+The goal is to support **thousands of integrators and companies using the system simultaneously**.
+
+Implement the following improvements carefully.
+
+Do not break existing functionality.
+
+------------------------------------------
+
+1) IMPLEMENT MULTI-TENANT ARCHITECTURE
+
+Create a new entity:
+
+organizations
+
+Table:
+
+organizations
+id
+name
+slug
+ownerId
+plan
+createdAt
+
+Each company using the system becomes an organization.
+
+Update tables to include:
+
+organizationId
+
+Apply to:
+
+users
+clients
+projects
+documents
+timeline
+chat_messages
+notifications
+pricing_ranges
+client_pricing
+
+Every query must filter by organizationId.
+
+Integrators can only see their organization data.
+
+Admins see only their organization.
+
+------------------------------------------
+
+2) TEAM MANAGEMENT SYSTEM
+
+Create tables:
+
+teams
+team_members
+
+teams
+id
+organizationId
+name
+createdAt
+
+team_members
+id
+teamId
+userId
+role
+
+Allow project assignment to teams.
+
+projects
+add field:
+
+teamId
+
+------------------------------------------
+
+3) ADVANCED PERMISSION SYSTEM
+
+Replace simple roles with permission based system.
+
+Create tables:
+
+roles
+permissions
+role_permissions
+user_roles
+
+permissions examples:
+
+project.view
+project.create
+project.update
+project.delete
+payment.create
+payment.view
+client.manage
+users.manage
+settings.manage
+
+Each role maps to multiple permissions.
+
+Middleware must check permission instead of role.
+
+------------------------------------------
+
+4) PROJECT ASSIGNMENT SYSTEM
+
+Add fields to projects:
+
+assignedEngineerId
+assignedInstallerId
+assignedManagerId
+
+Allow filtering by responsible person.
+
+------------------------------------------
+
+5) AUDIT LOG SYSTEM
+
+Create table:
+
+audit_logs
+
+Fields:
+
+id
+organizationId
+userId
+action
+entityType
+entityId
+payload
+createdAt
+
+Log actions:
+
+project created
+project updated
+payment generated
+document uploaded
+status changed
+user created
+
+------------------------------------------
+
+6) NOTIFICATION ENGINE
+
+Create table:
+
+user_notifications
+
+Fields:
+
+id
+userId
+title
+message
+type
+readAt
+createdAt
+
+Allow notifications for:
+
+new project
+payment approved
+new document
+chat message
+status update
+
+------------------------------------------
+
+7) SEARCH SYSTEM
+
+Create global search endpoint.
+
+Search across:
+
+projects
+clients
+ticketNumber
+cpfCnpj
+installationNumber
+
+Implement fast indexed search.
+
+------------------------------------------
+
+8) PERFORMANCE OPTIMIZATION
+
+Add indexes for:
+
+projects.clientId
+projects.status
+projects.organizationId
+documents.projectId
+chat_messages.projectId
+
+------------------------------------------
+
+9) API VERSIONING
+
+Move all routes to:
+
+/api/v1/
+
+Example:
+
+/api/v1/projects
+/api/v1/clients
+/api/v1/payments
+
+------------------------------------------
+
+10) BACKEND ARCHITECTURE
+
+Refactor server into professional structure:
+
+server/
+
+controllers
+services
+repositories
+routes
+middleware
+validators
+utils
+
+Controllers should not access database directly.
+
+Database logic must live inside repositories.
+
+------------------------------------------
+
+11) FILE STORAGE ABSTRACTION
+
+Create storage provider interface.
+
+storage/
+
+local-storage.ts
+s3-storage.ts
+
+Allow switching to AWS S3 later.
+
+------------------------------------------
+
+12) PROJECT ACTIVITY FEED
+
+Create activity system.
+
+Table:
+
+project_activity
+
+Fields:
+
+id
+projectId
+userId
+action
+description
+createdAt
+
+Display activity timeline.
+
+------------------------------------------
+
+13) DASHBOARD METRICS
+
+Create analytics endpoints:
+
+/api/v1/analytics/projects
+/api/v1/analytics/payments
+/api/v1/analytics/installations
+
+Metrics:
+
+projects created per month
+revenue per month
+projects by status
+approval time
+
+------------------------------------------
+
+14) REALTIME EVENTS
+
+Use WebSocket system already present.
+
+Emit events:
+
+project_updated
+chat_message
+document_uploaded
+payment_confirmed
+
+------------------------------------------
+
+15) BILLING SYSTEM
+
+Prepare SaaS billing structure.
+
+Add to organizations:
+
+plan
+maxUsers
+maxProjects
+maxStorage
+
+Create table:
+
+subscriptions
+
+Fields:
+
+organizationId
+plan
+status
+renewDate
+
+------------------------------------------
+
+16) DATA ISOLATION
+
+Ensure every query includes organizationId.
+
+Never allow cross-organization data access.
+
+------------------------------------------
+
+17) FRONTEND IMPROVEMENTS
+
+Add pages:
+
+Team Management
+User Permissions
+Audit Logs
+Analytics Dashboard
+Notifications Center
+
+------------------------------------------
+
+18) DO NOT BREAK CURRENT FEATURES
+
+Keep working:
+
+Kanban
+Projects
+Payments
+Timeline
+Documents
+Chat
+Client Portal
+Admin Portal
+
+------------------------------------------
+
+After all changes:
+
+Run:
+
+npm run check
+
+Then:
+
+npm run build
+
+Ensure system compiles successfully.

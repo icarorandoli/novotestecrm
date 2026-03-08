@@ -1,0 +1,47 @@
+ const fs = require('fs');
+> const path = 'server/routes.ts';
+> let c = fs.readFileSync(path, 'utf8');
+>
+> if (c.includes('projectIntegradorId')) {
+>   console.log('Arquivo ja esta correto!');
+> } else if (c.includes('project.userId !== user.id')) {
+>   c = c.replace(
+>     'if (!isAdmin && project.userId !== user.id)',
+>     'const projectIntegradorId = project.client?.userId;\n    if (!isAdmin && projectIntegradorId !== user.id)'
+>   );
+>   c = c.replace('if (project.userId) {', 'if (projectIntegradorId) {');
+>   c = c.replace('broadcastToProjectParticipants(project.userId,', 'broadcastToProjectParticipants(projectIntegradorId,');
+>   fs.writeFileSync(path, c);
+>   console.log('Corrigido com sucesso!');
+> } else {
+>   console.log('AVISO: texto nao encontrado - pode ja ter sido alterado');
+> }
+> " && npm run build && pm2 restart randoli-solar
+Corrigido com sucesso!
+
+> rest-express@1.0.0 build
+> tsx script/build.ts
+
+building client...
+vite v7.3.0 building client environment for production...
+transforming (5) ../node_modules/wouter/esm/index.js
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+✓ 2380 modules transformed.
+../dist/public/index.html                     1.34 kB │ gzip:   0.60 kB
+../dist/public/assets/index-BfVNrnZC.css     92.72 kB │ gzip:  14.80 kB
+../dist/public/assets/index-la0oIMW9.js   1,116.02 kB │ gzip: 316.90 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 9.36s
+building server...
+
+  dist/index.cjs  77.9kb
+
+⚡ Done in 31ms
+copying session table SQL...
+Use --update-env to update environment variables
+[PM2][ERROR] Process or Namespace randoli-solar not found
+root@srv1235745:~/randoli-solar#
