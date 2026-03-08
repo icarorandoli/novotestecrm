@@ -733,10 +733,13 @@ function ProjectDetailSheet({
 export default function ProjectsPage() {
   const [search, setSearch] = useState("");
   const [detailProjectId, setDetailProjectId] = useState<string | null>(null);
+  const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState("todos");
   const [tab, setTab] = useState("ativos");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const { toast } = useToast();
+  const { user } = useAuth();
+  const canDelete = user?.role === "admin";
 
   const { data: projects = [], isLoading } = useQuery<ProjectWithClient[]>({ queryKey: ["/api/projects"] });
   const { data: archived = [], isLoading: archivedLoading } = useQuery<ProjectWithClient[]>({
@@ -994,6 +997,17 @@ export default function ProjectsPage() {
                             <RotateCcw className="h-4 w-4" />
                           </Button>
                         )}
+                        {canDelete && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive"
+                            onClick={(e) => { e.stopPropagation(); setDeleteProjectId(project.id); }}
+                            data-testid={`button-delete-project-${project.id}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -1064,6 +1078,17 @@ export default function ProjectsPage() {
                         <RotateCcw className="h-4 w-4" />
                       </Button>
                     )}
+                    {canDelete && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive"
+                        onClick={(e) => { e.stopPropagation(); setDeleteProjectId(project.id); }}
+                        data-testid={`button-delete-card-${project.id}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                     <Button size="sm" variant="outline" className="text-[10px] font-bold uppercase tracking-widest px-4 h-8 rounded-lg border-border/60 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all">
                       Gerenciar
                     </Button>
@@ -1080,6 +1105,32 @@ export default function ProjectsPage() {
         open={!!detailProjectId}
         onClose={() => setDetailProjectId(null)}
       />
+
+      <Dialog open={!!deleteProjectId} onOpenChange={(open) => { if (!open) setDeleteProjectId(null); }}>
+        <DialogContent data-testid="dialog-confirm-delete-project">
+          <DialogHeader>
+            <DialogTitle className="text-destructive flex items-center gap-2">
+              <Trash2 className="h-5 w-5" /> Excluir Projeto
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Tem certeza que deseja excluir este projeto? Esta ação é <strong>irreversível</strong> e todos os dados do projeto serão perdidos.
+          </p>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setDeleteProjectId(null)} data-testid="button-cancel-delete">
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => { if (deleteProjectId) { deleteMut.mutate(deleteProjectId); setDeleteProjectId(null); } }}
+              disabled={deleteMut.isPending}
+              data-testid="button-confirm-delete"
+            >
+              {deleteMut.isPending ? "Excluindo..." : "Sim, excluir"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
