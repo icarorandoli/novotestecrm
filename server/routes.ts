@@ -15,6 +15,7 @@ import {
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { sendStatusEmail, sendTestEmail, sendPasswordResetEmail, sendDocumentEmail, sendTimelineEmail, type EmailConfig } from "./email";
 import { createPaymentPreference, createPixPayment, getPaymentInfo, getMerchantOrder, verifyWebhookSignature } from "./mercadopago";
+import { createInterPixCharge, testInterConnection, type InterConfig } from "./inter";
 import { registerUploadRoutes } from "./upload";
 import { calculateSystemSize, phaseFromConsumption } from "./ai/solar-calculator";
 import { dimensionSystem } from "./ai/solar-dimensioning";
@@ -50,6 +51,25 @@ async function getEmailConfig(): Promise<EmailConfig> {
 function getMpAccessToken(settingsMap?: Record<string, string>): string | null {
   if (settingsMap?.["mp_enabled"] === "false") return null;
   return settingsMap?.["mp_access_token"] || process.env.MP_ACCESS_TOKEN || null;
+}
+
+function getInterConfig(settingsMap?: Record<string, string>): InterConfig | null {
+  if (!settingsMap) return null;
+  if (settingsMap["inter_enabled"] === "false") return null;
+  const clientId = settingsMap["inter_client_id"] || process.env.INTER_CLIENT_ID || "";
+  const clientSecret = settingsMap["inter_client_secret"] || process.env.INTER_CLIENT_SECRET || "";
+  const certificate = settingsMap["inter_certificate"] || process.env.INTER_CERTIFICATE || "";
+  const privateKey = settingsMap["inter_private_key"] || process.env.INTER_PRIVATE_KEY || "";
+  const pixKey = settingsMap["inter_pix_key"] || process.env.INTER_PIX_KEY || "";
+  if (!clientId || !clientSecret || !certificate || !privateKey || !pixKey) return null;
+  return {
+    clientId,
+    clientSecret,
+    certificate,
+    privateKey,
+    pixKey,
+    environment: (settingsMap["inter_environment"] as "sandbox" | "production") || "production",
+  };
 }
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
@@ -606,23 +626,26 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
           payload: JSON.stringify({ from: current.status, to: data.status }),
         }).catch(() => {});
 
-        // Auto-create Mercado Pago payment when status changes to aprovado_pagamento_pendente
+        // Auto-create payments when status changes to aprovado_pagamento_pendente
         let paymentLink: string | undefined;
         if (data.status === "aprovado_pagamento_pendente" && (updated?.valor || current.valor)) {
-          try {
-            const settingsMap = await getSettingsMap();
-            const mpToken = getMpAccessToken(settingsMap);
-            if (mpToken) {
+          const settingsMap = await getSettingsMap();
+          const intEmail = current.integrador?.email || current.client?.email;
+          const intName = current.integrador?.name || current.client?.name;
+          const valorStr = updated?.valor || current.valor || "0";
+
+          // ── Mercado Pago ──────────────────────────────────────────
+          const mpToken = getMpAccessToken(settingsMap);
+          if (mpToken) {
+            try {
               const portalUrl = settingsMap["email_portal_url"] || "https://projetos.randolisolar.com.br";
               const webhookUrl = `${portalUrl}/api/mercadopago/webhook`;
-              const intEmail = current.integrador?.email || current.client?.email;
-              const intName = current.integrador?.name || current.client?.name;
               const paymentArgs = {
                 accessToken: mpToken,
                 projectId: (req.params.id as string),
                 projectTitle: current.title,
                 ticketNumber: current.ticketNumber,
-                valor: updated?.valor || current.valor || "0",
+                valor: valorStr,
                 integradorEmail: intEmail || undefined,
                 integradorName: intName || undefined,
                 webhookUrl,
@@ -644,18 +667,47 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
                 console.error("[mercadopago] Erro ao criar PIX (continuando sem):", pixErr);
               }
               await storage.updateProject((req.params.id as string), updatePayment);
-              await storage.addTimelineEntry({
-                projectId: (req.params.id as string),
-                event: "Link de pagamento gerado",
-                details: "Pagamento via Mercado Pago e PIX criados automaticamente.",
-                createdByRole: "admin",
-              });
               console.log(`[mercadopago] ✓ Preferência criada para projeto ${(req.params.id as string)}`);
-            } else {
-              console.log("[mercadopago] Access token não configurado — pagamento não gerado");
+            } catch (err) {
+              console.error("[mercadopago] Erro ao criar pagamento:", err);
             }
-          } catch (err) {
-            console.error("[mercadopago] Erro ao criar pagamento:", err);
+          }
+
+          // ── Banco Inter PIX ──────────────────────────────────────
+          const interCfg = getInterConfig(settingsMap);
+          if (interCfg) {
+            try {
+              const interPix = await createInterPixCharge({
+                config: interCfg,
+                projectId: (req.params.id as string),
+                projectTitle: current.title,
+                ticketNumber: current.ticketNumber,
+                valor: valorStr,
+                integradorName: intName || undefined,
+              });
+              await storage.updateProject((req.params.id as string), {
+                interPixTxid: interPix.txid,
+                interPixCopiaECola: interPix.pixCopiaECola,
+                interPixQrCodeBase64: interPix.qrCodeBase64,
+                interPixStatus: interPix.status,
+              });
+              console.log(`[inter] ✓ PIX Inter criado para projeto ${(req.params.id as string)}`);
+            } catch (err) {
+              console.error("[inter] Erro ao criar PIX Inter:", err);
+            }
+          }
+
+          // Timeline entry for payment
+          if (mpToken || interCfg) {
+            await storage.addTimelineEntry({
+              projectId: (req.params.id as string),
+              event: "Pagamento disponível",
+              details: [
+                mpToken ? "Mercado Pago (PIX e Cartão)" : null,
+                interCfg ? "PIX Banco Inter" : null,
+              ].filter(Boolean).join(" e ") + " disponíveis para pagamento.",
+              createdByRole: "admin",
+            });
           }
         }
 
@@ -1318,9 +1370,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       const settings = await storage.getSiteSettings();
       const map: Record<string, string> = {};
+      const MASKED_KEYS = new Set([
+        "email_smtp_pass", "mp_access_token", "mp_webhook_secret",
+        "inter_client_secret", "inter_certificate", "inter_private_key", "inter_webhook_key",
+      ]);
       for (const s of settings) {
         if (!s.value) continue;
-        if (s.key === "email_smtp_pass" || s.key === "mp_access_token" || s.key === "mp_webhook_secret") {
+        if (MASKED_KEYS.has(s.key)) {
           map[s.key] = "••••••••";
         } else {
           map[s.key] = s.value;
@@ -1334,11 +1390,30 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       const { key, value } = req.body;
       if (!key || value === undefined) return res.status(400).json({ error: "key e value obrigatórios" });
-      if ((key === "email_smtp_pass" || key === "mp_access_token" || key === "mp_webhook_secret") && value === "••••••••") {
+      const MASKED_KEYS = new Set([
+        "email_smtp_pass", "mp_access_token", "mp_webhook_secret",
+        "inter_client_secret", "inter_certificate", "inter_private_key", "inter_webhook_key",
+      ]);
+      if (MASKED_KEYS.has(key) && value === "••••••••") {
         return res.json({ key, value });
       }
       res.json(await storage.setSiteSetting(key, value));
     } catch { res.status(500).json({ error: "Erro" }); }
+  });
+
+  // ── INTER TEST CONNECTION ──────────────────────────────────────────
+  app.post("/api/inter/test", requireAuth, async (req, res) => {
+    try {
+      const { clientId, clientSecret, certificate, privateKey, pixKey, environment } = req.body;
+      if (!clientId || !clientSecret || !certificate || !privateKey || !pixKey) {
+        return res.status(400).json({ ok: false, message: "Todos os campos são obrigatórios para testar a conexão." });
+      }
+      const config: InterConfig = { clientId, clientSecret, certificate, privateKey, pixKey, environment: environment || "production" };
+      const result = await testInterConnection(config);
+      res.json(result);
+    } catch (err: any) {
+      res.status(500).json({ ok: false, message: err.message || "Erro ao testar conexão" });
+    }
   });
 
   // ── EMAIL TEST ──────────────────────────────────────────────────────

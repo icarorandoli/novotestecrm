@@ -287,6 +287,73 @@ function PixSection({ qrCode, qrCodeBase64 }: { qrCode: string; qrCodeBase64: st
   );
 }
 
+function InterPixSection({ copiaECola, qrCodeBase64 }: { copiaECola: string; qrCodeBase64?: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(copiaECola);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 3000);
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = copiaECola;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 3000);
+    }
+  };
+
+  return (
+    <div className="mt-4 p-4 rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-800">
+      <div className="flex items-center gap-2 mb-3">
+        <QrCode className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+        <p className="text-sm font-semibold text-orange-800 dark:text-orange-300">PIX via Banco Inter</p>
+      </div>
+
+      {qrCodeBase64 && (
+        <div className="flex justify-center mb-3">
+          <img
+            src={`data:image/png;base64,${qrCodeBase64}`}
+            alt="QR Code PIX Banco Inter"
+            className="w-48 h-48 rounded-lg border border-orange-300 bg-white p-2"
+            data-testid="img-inter-pix-qrcode"
+          />
+        </div>
+      )}
+
+      <div className="space-y-2">
+        <p className="text-xs text-orange-700 dark:text-orange-400 font-medium">PIX Copia e Cola:</p>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            readOnly
+            value={copiaECola}
+            className="flex-1 text-xs font-mono bg-white dark:bg-gray-800 border border-orange-300 dark:border-orange-700 rounded px-2 py-1.5 truncate"
+            data-testid="input-inter-pix-copiacola"
+          />
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleCopy}
+            className="shrink-0 border-orange-400 text-orange-700 hover:bg-orange-100 dark:text-orange-400 dark:hover:bg-orange-900/40"
+            data-testid="button-copy-inter-pix"
+          >
+            {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+            <span className="ml-1 text-xs">{copied ? "Copiado!" : "Copiar"}</span>
+          </Button>
+        </div>
+        <p className="text-[11px] text-orange-600 dark:text-orange-500">
+          Abra o app do seu banco, escolha "Pagar com PIX" e use o QR Code ou cole o código acima.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 type ProjectDetail = Project & { client: Client | null };
 
 function InfoRow({ label, value, link }: { label: string; value?: string | null; link?: boolean }) {
@@ -745,7 +812,13 @@ export default function PortalProjetoPage() {
                 <p className="text-sm font-medium text-amber-700/80 dark:text-amber-400/80">
                   O projeto técnico foi aprovado! Realize o pagamento para iniciar a elaboração dos documentos.
                 </p>
-                <div className="pt-2">
+                <div className="pt-2 space-y-2">
+                  {project.interPixCopiaECola && (
+                    <InterPixSection
+                      copiaECola={project.interPixCopiaECola}
+                      qrCodeBase64={project.interPixQrCodeBase64 || undefined}
+                    />
+                  )}
                   {project.pixQrCode && project.pixQrCodeBase64 && (
                     <PixSection qrCode={project.pixQrCode} qrCodeBase64={project.pixQrCodeBase64} />
                   )}

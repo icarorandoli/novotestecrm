@@ -11,8 +11,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Save, Upload, Zap, Building2, ImageOff, Mail, Send, Eye, EyeOff,
-  CreditCard, MonitorPlay, Image, Settings2, Globe, ShieldCheck, Palette, ArrowRight
+  CreditCard, MonitorPlay, Image, Settings2, Globe, ShieldCheck, Palette, ArrowRight,
+  CheckCircle2, XCircle, Loader2
 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useUpload } from "@/hooks/use-upload";
 
@@ -249,6 +251,18 @@ export default function SettingsPage() {
   const [mpWebhookSecret, setMpWebhookSecret] = useState("");
   const [showMpToken, setShowMpToken] = useState(false);
 
+  const [interEnabled, setInterEnabled] = useState(false);
+  const [interEnvironment, setInterEnvironment] = useState<"sandbox" | "production">("production");
+  const [interClientId, setInterClientId] = useState("");
+  const [interClientSecret, setInterClientSecret] = useState("");
+  const [interCertificate, setInterCertificate] = useState("");
+  const [interPrivateKey, setInterPrivateKey] = useState("");
+  const [interPixKey, setInterPixKey] = useState("");
+  const [interWebhookKey, setInterWebhookKey] = useState("");
+  const [showInterSecret, setShowInterSecret] = useState(false);
+  const [showInterCert, setShowInterCert] = useState(false);
+  const [showInterKey, setShowInterKey] = useState(false);
+
   const [loginBadgeText, setLoginBadgeText] = useState("Portal SaaS de Homologação");
   const [loginHeadline, setLoginHeadline] = useState("Gerencie projetos de energia solar de forma simples e eficiente");
   const [loginHighlight, setLoginHighlight] = useState("energia solar");
@@ -278,6 +292,14 @@ export default function SettingsPage() {
     setMpAccessToken(settings.mp_access_token || "");
     setMpPublicKey(settings.mp_public_key || "");
     setMpWebhookSecret(settings.mp_webhook_secret || "");
+    setInterEnabled(settings.inter_enabled === "true");
+    setInterEnvironment((settings.inter_environment as "sandbox" | "production") || "production");
+    setInterClientId(settings.inter_client_id || "");
+    setInterClientSecret(settings.inter_client_secret || "");
+    setInterCertificate(settings.inter_certificate || "");
+    setInterPrivateKey(settings.inter_private_key || "");
+    setInterPixKey(settings.inter_pix_key || "");
+    setInterWebhookKey(settings.inter_webhook_key || "");
     if (settings.login_badge_text) setLoginBadgeText(settings.login_badge_text);
     if (settings.login_headline) setLoginHeadline(settings.login_headline);
     if (settings.login_headline_highlight) setLoginHighlight(settings.login_headline_highlight);
@@ -314,6 +336,22 @@ export default function SettingsPage() {
       if (mpWebhookSecret && mpWebhookSecret !== "••••••••") {
         pairs.push({ key: "mp_webhook_secret", value: mpWebhookSecret });
       }
+      pairs.push({ key: "inter_enabled", value: interEnabled ? "true" : "false" });
+      pairs.push({ key: "inter_environment", value: interEnvironment });
+      pairs.push({ key: "inter_client_id", value: interClientId });
+      pairs.push({ key: "inter_pix_key", value: interPixKey });
+      if (interClientSecret && interClientSecret !== "••••••••") {
+        pairs.push({ key: "inter_client_secret", value: interClientSecret });
+      }
+      if (interCertificate && interCertificate !== "••••••••") {
+        pairs.push({ key: "inter_certificate", value: interCertificate });
+      }
+      if (interPrivateKey && interPrivateKey !== "••••••••") {
+        pairs.push({ key: "inter_private_key", value: interPrivateKey });
+      }
+      if (interWebhookKey && interWebhookKey !== "••••••••") {
+        pairs.push({ key: "inter_webhook_key", value: interWebhookKey });
+      }
       pairs.push(
         { key: "login_badge_text", value: loginBadgeText },
         { key: "login_headline", value: loginHeadline },
@@ -347,6 +385,28 @@ export default function SettingsPage() {
       try { const body = await err.json?.(); if (body?.error) msg = body.error; } catch {}
       toast({ title: msg, variant: "destructive" });
     },
+  });
+
+  const testInterMut = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/inter/test", {
+        clientId: interClientId,
+        clientSecret: interClientSecret !== "••••••••" ? interClientSecret : undefined,
+        certificate: interCertificate !== "••••••••" ? interCertificate : undefined,
+        privateKey: interPrivateKey !== "••••••••" ? interPrivateKey : undefined,
+        pixKey: interPixKey,
+        environment: interEnvironment,
+      });
+      return res.json();
+    },
+    onSuccess: (data: { ok: boolean; message: string }) => {
+      if (data.ok) {
+        toast({ title: "Banco Inter conectado!", description: data.message });
+      } else {
+        toast({ title: "Falha na conexão", description: data.message, variant: "destructive" });
+      }
+    },
+    onError: () => toast({ title: "Erro ao testar conexão Inter", variant: "destructive" }),
   });
 
   return (
@@ -562,6 +622,152 @@ export default function SettingsPage() {
                           </button>
                         </div>
                       </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Banco Inter */}
+                <Card className="border-muted/40 shadow-sm">
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-xl bg-orange-500/10 flex items-center justify-center">
+                        <CreditCard className="h-5 w-5 text-orange-500" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">Banco Inter — PIX</CardTitle>
+                        <CardDescription>Configure o recebimento via PIX diretamente pelo Banco Inter (mTLS).</CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border">
+                      <div className="space-y-0.5">
+                        <p className="font-semibold">PIX Banco Inter</p>
+                        <p className="text-sm text-muted-foreground">Habilitar PIX via Banco Inter no portal do integrador</p>
+                      </div>
+                      <Switch checked={interEnabled} onCheckedChange={setInterEnabled} data-testid="switch-inter-enabled" />
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Ambiente</Label>
+                        <Select value={interEnvironment} onValueChange={(v) => setInterEnvironment(v as "sandbox" | "production")}>
+                          <SelectTrigger data-testid="select-inter-environment">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="production">Produção</SelectItem>
+                            <SelectItem value="sandbox">Sandbox (testes)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Client ID</Label>
+                          <Input
+                            value={interClientId}
+                            onChange={e => setInterClientId(e.target.value)}
+                            placeholder="seu-client-id"
+                            data-testid="input-inter-client-id"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Chave PIX (recebimento)</Label>
+                          <Input
+                            value={interPixKey}
+                            onChange={e => setInterPixKey(e.target.value)}
+                            placeholder="CPF, CNPJ, e-mail ou chave aleatória"
+                            data-testid="input-inter-pix-key"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Client Secret</Label>
+                        <div className="relative">
+                          <Input
+                            type={showInterSecret ? "text" : "password"}
+                            value={interClientSecret}
+                            onChange={e => setInterClientSecret(e.target.value)}
+                            placeholder="client-secret"
+                            className="pr-10"
+                            data-testid="input-inter-client-secret"
+                          />
+                          <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" onClick={() => setShowInterSecret(!showInterSecret)}>
+                            {showInterSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Certificado (.crt) — Conteúdo PEM</Label>
+                        <div className="relative">
+                          <Textarea
+                            value={showInterCert ? interCertificate : (interCertificate && interCertificate !== "••••••••" ? "••••••••" : interCertificate)}
+                            onChange={e => setInterCertificate(e.target.value)}
+                            onFocus={() => setShowInterCert(true)}
+                            placeholder={"-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----"}
+                            rows={4}
+                            className="font-mono text-xs resize-none"
+                            data-testid="textarea-inter-certificate"
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">Cole o conteúdo completo do arquivo .crt gerado pelo portal Inter.</p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Chave Privada (.key) — Conteúdo PEM</Label>
+                        <div className="relative">
+                          <Textarea
+                            value={showInterKey ? interPrivateKey : (interPrivateKey && interPrivateKey !== "••••••••" ? "••••••••" : interPrivateKey)}
+                            onChange={e => setInterPrivateKey(e.target.value)}
+                            onFocus={() => setShowInterKey(true)}
+                            placeholder={"-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"}
+                            rows={4}
+                            className="font-mono text-xs resize-none"
+                            data-testid="textarea-inter-private-key"
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">Cole o conteúdo completo do arquivo .key gerado pelo portal Inter.</p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Webhook Key (opcional)</Label>
+                        <div className="relative">
+                          <Input
+                            type="password"
+                            value={interWebhookKey}
+                            onChange={e => setInterWebhookKey(e.target.value)}
+                            placeholder="Chave HMAC para validação de webhooks"
+                            data-testid="input-inter-webhook-key"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="p-4 rounded-xl bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-900/30 space-y-2">
+                        <p className="text-xs font-semibold text-orange-800 dark:text-orange-300">Como obter as credenciais:</p>
+                        <ol className="text-xs text-orange-700 dark:text-orange-400 space-y-1 list-decimal list-inside">
+                          <li>Acesse <strong>developers.inter.co</strong> e crie uma aplicação</li>
+                          <li>Gere o certificado digital (baixe o .crt e o .key)</li>
+                          <li>Copie o Client ID e Client Secret gerados</li>
+                          <li>Informe sua chave PIX cadastrada no Inter para recebimento</li>
+                        </ol>
+                      </div>
+
+                      <Button
+                        variant="outline"
+                        onClick={() => testInterMut.mutate()}
+                        disabled={testInterMut.isPending || !interClientId || !interPixKey}
+                        className="w-full"
+                        data-testid="button-test-inter"
+                      >
+                        {testInterMut.isPending ? (
+                          <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Testando conexão...</>
+                        ) : (
+                          <><ShieldCheck className="h-4 w-4 mr-2" />Testar Conexão com Banco Inter</>
+                        )}
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
