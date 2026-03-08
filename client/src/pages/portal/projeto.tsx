@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams } from "wouter";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -348,21 +348,21 @@ function DocumentUploadCard({ projectId }: { projectId: string }) {
   };
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm flex items-center gap-2">
-          <Upload className="h-4 w-4 text-primary" />
+    <Card className="border-border/40 shadow-xl shadow-black/5 overflow-hidden rounded-3xl">
+      <CardHeader className="bg-muted/30 border-b border-border/40 px-8 py-6">
+        <CardTitle className="text-lg font-bold flex items-center gap-2">
+          <Upload className="h-5 w-5 text-primary" />
           Enviar Documento
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="space-y-1.5">
-          <Label className="text-xs">Tipo de Documento</Label>
+      <CardContent className="p-8 space-y-4">
+        <div className="space-y-2">
+          <Label className="text-xs font-bold uppercase tracking-wider">Tipo de Documento</Label>
           <Select value={docType} onValueChange={v => {
             setDocType(v);
             setDocName(DOC_TYPE_LABELS[v] || "");
           }}>
-            <SelectTrigger data-testid="select-doc-type">
+            <SelectTrigger data-testid="select-doc-type" className="h-11 rounded-xl">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -372,20 +372,20 @@ function DocumentUploadCard({ projectId }: { projectId: string }) {
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs">Nome do Documento</Label>
-          <Input value={docName} onChange={e => setDocName(e.target.value)} placeholder="Ex: Conta de Energia — Janeiro/2025" data-testid="input-doc-name" />
+        <div className="space-y-2">
+          <Label className="text-xs font-bold uppercase tracking-wider">Nome do Documento</Label>
+          <Input value={docName} onChange={e => setDocName(e.target.value)} placeholder="Ex: Conta de Energia — Janeiro/2025" data-testid="input-doc-name" className="h-11 rounded-xl" />
         </div>
         <label className="block">
           <Button
             type="button"
             variant="outline"
-            className="w-full relative"
+            className="w-full h-11 relative rounded-xl font-bold border-dashed border-2 hover:bg-primary/5 hover:border-primary/50 transition-all"
             disabled={uploading || addDocMut.isPending}
             data-testid="button-upload-doc"
           >
-            <Upload className="h-3.5 w-3.5 mr-1.5" />
-            {uploading || addDocMut.isPending ? "Enviando..." : "Selecionar Arquivo"}
+            <Upload className="h-4 w-4 mr-2" />
+            {uploading || addDocMut.isPending ? "Enviando arquivo..." : "Selecionar do Dispositivo"}
             <input
               type="file"
               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
@@ -395,7 +395,7 @@ function DocumentUploadCard({ projectId }: { projectId: string }) {
             />
           </Button>
         </label>
-        <p className="text-xs text-muted-foreground">PDF, imagens, Word — máx. 10MB</p>
+        <p className="text-[10px] text-center text-muted-foreground font-medium uppercase tracking-widest">Formatos aceitos: PDF, JPG, PNG, DOC (Max 10MB)</p>
       </CardContent>
     </Card>
   );
@@ -404,23 +404,28 @@ function DocumentUploadCard({ projectId }: { projectId: string }) {
 function TimelineItem({ entry, isLast }: { entry: Timeline; isLast: boolean }) {
   const isAdmin = entry.createdByRole === "admin";
   return (
-    <div className="flex gap-3">
+    <div className="flex gap-4">
       <div className="flex flex-col items-center">
-        <div className={`h-7 w-7 rounded-full flex items-center justify-center flex-shrink-0 ${isAdmin ? "bg-primary/15" : "bg-muted"}`}>
+        <div className={`h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm ${isAdmin ? "bg-primary/10" : "bg-muted"}`}>
           {isAdmin ? (
-            <Zap className="h-3.5 w-3.5 text-primary" />
+            <Zap className="h-5 w-5 text-primary" />
           ) : (
-            <Upload className="h-3.5 w-3.5 text-muted-foreground" />
+            <Upload className="h-5 w-5 text-muted-foreground" />
           )}
         </div>
-        {!isLast && <div className="w-px flex-1 bg-border mt-1 min-h-[24px]" />}
+        {!isLast && <div className="w-0.5 flex-1 bg-border/40 mt-2 min-h-[30px]" />}
       </div>
-      <div className="pb-4 flex-1 min-w-0">
-        <p className="text-sm font-medium leading-tight">{entry.event}</p>
-        {entry.details && <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{entry.details}</p>}
-        <p className="text-xs text-muted-foreground mt-1">
-          {isAdmin ? "Randoli Engenharia" : "Você"} · {entry.createdAt ? new Date(entry.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : ""}
-        </p>
+      <div className="pb-8 flex-1 min-w-0">
+        <p className="text-sm font-bold text-foreground leading-tight">{entry.event}</p>
+        {entry.details && <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed font-medium">{entry.details}</p>}
+        <div className="flex items-center gap-2 mt-2">
+          <Badge variant="outline" className="text-[9px] font-black uppercase py-0 px-1.5 h-4">
+            {isAdmin ? "Engenharia" : "Integrador"}
+          </Badge>
+          <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">
+            {entry.createdAt ? new Date(entry.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : ""}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -466,58 +471,81 @@ export default function PortalProjetoPage() {
 
   if (isLoading) {
     return (
-      <div className="p-6 space-y-4 max-w-5xl mx-auto">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-40 w-full" />
-        <Skeleton className="h-64 w-full" />
+      <div className="p-8 space-y-8 max-w-6xl mx-auto">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-10 w-10 rounded-full" />
+          <Skeleton className="h-10 w-64" />
+        </div>
+        <Skeleton className="h-48 w-full rounded-3xl" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <Skeleton className="h-96 w-full rounded-3xl" />
+          <Skeleton className="h-96 w-full rounded-3xl" />
+        </div>
       </div>
     );
   }
 
-  if (!project) return <div className="p-6 text-muted-foreground">Projeto não encontrado.</div>;
+  if (!project) return <div className="p-8 text-center font-bold text-muted-foreground">Projeto não encontrado.</div>;
 
   return (
-    <div className="p-6 space-y-5 max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="flex items-start gap-3">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href="/portal"><ArrowLeft className="h-4 w-4" /></Link>
-        </Button>
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            {(project as any).ticketNumber && (
-              <span className="text-sm font-mono text-primary font-bold flex items-center gap-1">
-                <Hash className="h-4 w-4" />{(project as any).ticketNumber}
-              </span>
-            )}
-            <h1 className="text-xl font-bold leading-tight" data-testid="text-project-title">{project.title}</h1>
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE_STYLES[project.status]}`}>
-              {STATUS_LABELS[project.status]}
-            </span>
+    <div className="p-4 md:p-10 space-y-8 max-w-6xl mx-auto">
+      {/* Header Navigation */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="icon" asChild className="rounded-full h-11 w-11 shrink-0 shadow-sm">
+            <Link href="/portal"><ArrowLeft className="h-5 w-5" /></Link>
+          </Button>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-3">
+              {(project as any).ticketNumber && (
+                <Badge variant="secondary" className="font-mono text-xs py-0.5 px-2 bg-primary/10 text-primary border-primary/20 font-bold">
+                  {(project as any).ticketNumber}
+                </Badge>
+              )}
+              <h1 className="text-2xl md:text-3xl font-black tracking-tight truncate" data-testid="text-project-title">
+                {project.title}
+              </h1>
+            </div>
+            <p className="text-sm font-medium text-muted-foreground mt-1 flex items-center gap-2">
+              <Building className="h-3.5 w-3.5" /> {project.concessionaria || "Concessionária não informada"}
+              {project.numeroProtocolo && (
+                <>
+                  <span className="opacity-30">•</span>
+                  <span className="flex items-center gap-1.5"><FileText className="h-3.5 w-3.5" /> Prot: {project.numeroProtocolo}</span>
+                </>
+              )}
+            </p>
           </div>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {project.concessionaria && `${project.concessionaria}`}
-            {project.numeroProtocolo && ` · Protocolo: ${project.numeroProtocolo}`}
-          </p>
+        </div>
+
+        <div className={`px-5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-black/5 flex items-center gap-3 ${STATUS_BADGE_STYLES[project.status]}`}>
+          <div className="h-2 w-2 rounded-full animate-pulse" style={{ backgroundColor: STATUS_COLORS[project.status] }} />
+          {STATUS_LABELS[project.status]}
         </div>
       </div>
 
-      {/* Status Stepper */}
+      {/* Status Stepper Card */}
       {project.status !== "cancelado" && (
-        <Card>
-          <CardContent className="p-4 pb-5">
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Progresso da Homologação</p>
-              <span className="text-xs text-muted-foreground">
-                Etapa {currentIdx + 1} de {STATUS_ORDER.length}
-              </span>
+        <Card className="border-border/40 shadow-xl shadow-black/5 overflow-hidden rounded-3xl">
+          <CardHeader className="bg-muted/30 px-8 py-6 border-b border-border/40">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <CardTitle className="text-lg font-bold">Fluxo de Homologação</CardTitle>
+                <CardDescription className="font-medium">Acompanhe o progresso técnico do seu sistema</CardDescription>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-black tracking-tighter text-primary">
+                  {Math.round(((currentIdx + 1) / STATUS_ORDER.length) * 100)}%
+                </p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Etapa {currentIdx + 1} de {STATUS_ORDER.length}</p>
+              </div>
             </div>
-
+          </CardHeader>
+          <CardContent className="p-8">
             {/* Progress bar */}
-            <div className="relative mb-5">
-              <div className="h-1.5 w-full bg-border rounded-full" />
+            <div className="relative mb-10 h-3 bg-muted rounded-full overflow-hidden shadow-inner">
               <div
-                className="h-1.5 rounded-full absolute top-0 left-0 transition-all duration-500"
+                className="h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_20px_rgba(0,0,0,0.1)]"
                 style={{
                   width: `${Math.round(((currentIdx + 1) / STATUS_ORDER.length) * 100)}%`,
                   backgroundColor: STATUS_COLORS[project.status] || "#3b82f6",
@@ -525,22 +553,22 @@ export default function PortalProjetoPage() {
               />
             </div>
 
-            {/* Steps */}
-            <div className="flex items-start gap-0 overflow-x-auto pb-1 -mx-1 px-1">
+            {/* Horizontal Scrollable Steps */}
+            <div className="flex items-start gap-0 overflow-x-auto pb-6 scrollbar-hide -mx-2 px-2">
               {STATUS_ORDER.map((status, i) => {
                 const isPast = i < currentIdx;
                 const isCurrent = i === currentIdx;
                 const isFuture = i > currentIdx;
                 return (
-                  <div key={status} className="flex items-start flex-shrink-0" style={{ flex: "1 0 auto", minWidth: "52px", maxWidth: "72px" }}>
-                    <div className="flex flex-col items-center w-full gap-1.5">
+                  <div key={status} className="flex items-start shrink-0 group" style={{ flex: "1 0 auto", minWidth: "80px", maxWidth: "120px" }}>
+                    <div className="flex flex-col items-center w-full gap-3">
                       <div
-                        className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all border-2 ${
+                        className={`h-10 w-10 rounded-2xl flex items-center justify-center text-xs font-black transition-all border-4 shadow-sm ${
                           isCurrent
-                            ? "border-transparent text-white shadow-md scale-110"
+                            ? "border-primary/20 text-white shadow-xl shadow-primary/20 scale-110 z-10"
                             : isPast
                             ? "border-transparent text-white"
-                            : "border-border bg-background text-muted-foreground/50"
+                            : "border-muted-foreground/10 bg-muted/30 text-muted-foreground/40"
                         }`}
                         style={
                           isCurrent || isPast
@@ -548,15 +576,15 @@ export default function PortalProjetoPage() {
                             : undefined
                         }
                       >
-                        {isPast ? "✓" : i + 1}
+                        {isPast ? <Check className="h-5 w-5 stroke-[3]" /> : i + 1}
                       </div>
                       <span
-                        className={`text-[9px] font-medium text-center leading-tight px-0.5 ${
+                        className={`text-[10px] font-bold text-center leading-tight px-2 transition-colors ${
                           isCurrent
-                            ? "text-foreground font-semibold"
+                            ? "text-foreground"
                             : isPast
                             ? "text-muted-foreground"
-                            : "text-muted-foreground/40"
+                            : "text-muted-foreground/30"
                         }`}
                       >
                         {STATUS_LABELS[status]}
@@ -564,11 +592,11 @@ export default function PortalProjetoPage() {
                     </div>
                     {i < STATUS_ORDER.length - 1 && (
                       <div
-                        className="h-px mt-3 flex-shrink-0 transition-all"
+                        className="h-1 mt-4.5 shrink-0 transition-all"
                         style={{
                           width: "100%",
-                          minWidth: "8px",
-                          backgroundColor: i < currentIdx ? STATUS_COLORS[status] : "hsl(var(--border))",
+                          minWidth: "12px",
+                          backgroundColor: i < currentIdx ? STATUS_COLORS[status] : "hsl(var(--muted))",
                         }}
                       />
                     )}
@@ -580,216 +608,175 @@ export default function PortalProjetoPage() {
         </Card>
       )}
 
-      {/* Payment pending alert */}
-      {project.status === "aprovado_pagamento_pendente" && (
-        <Card className="border-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-700">
-          <CardContent className="p-4 flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-300">Projeto Aprovado — Pagamento Pendente</p>
-              <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-0.5">
-                Seu projeto foi aprovado! Realize o pagamento para darmos início ao projeto técnico.
-              </p>
-              {project.valor && (
-                <p className="text-sm font-bold text-yellow-800 dark:text-yellow-200 mt-2 flex items-center gap-1.5">
-                  <DollarSign className="h-4 w-4" />
-                  Valor: R$ {project.valor}
-                </p>
-              )}
-              {project.pixQrCode && (
-                <PixSection qrCode={project.pixQrCode} qrCodeBase64={project.pixQrCodeBase64 || ""} />
-              )}
-              {project.paymentId && (
-                <MercadoPagoBrick preferenceId={project.paymentId} paymentLink={project.paymentLink} />
-              )}
-              {!project.paymentId && project.paymentLink && (
-                <a
-                  href={project.paymentLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 mt-3 px-4 py-2.5 rounded-lg text-sm font-bold text-white no-underline"
-                  style={{ background: "#009ee3" }}
-                  data-testid="link-pay-mercadopago"
-                >
-                  <CreditCard className="h-4 w-4" />
-                  Pagar com Mercado Pago
-                  <ExternalLink className="h-3.5 w-3.5" />
-                </a>
-              )}
-              {!project.paymentId && !project.paymentLink && !project.pixQrCode && (
-                <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-2">
-                  Envie o comprovante de pagamento abaixo para darmos início ao projeto.
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Left column: details + upload */}
-        <div className="lg:col-span-1 space-y-4">
-
-          {/* Valor do projeto */}
-          {project.valor && project.status !== "aprovado_pagamento_pendente" && (
-            <Card className="border-primary/20 bg-primary/5">
-              <CardContent className="p-4 flex items-center gap-3">
-                <DollarSign className="h-5 w-5 text-primary flex-shrink-0" />
-                <div>
-                  <p className="text-xs text-muted-foreground">Valor do Projeto</p>
-                  <p className="text-base font-bold">R$ {project.valor}</p>
+      {/* Main Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* Left Column: Details and Docs */}
+        <div className="lg:col-span-2 space-y-8">
+          
+          {/* Project Details Card */}
+          <Card className="border-border/40 shadow-xl shadow-black/5 overflow-hidden rounded-3xl">
+            <CardHeader className="bg-muted/30 border-b border-border/40 px-8 py-6">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Activity className="h-5 w-5 text-primary" />
                 </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Dados do titular */}
-          {(project.nomeCliente || project.cpfCnpjCliente) && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                  <User className="h-3.5 w-3.5" /> Titular
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0 pb-3">
-                <InfoRow label="Nome" value={project.nomeCliente} />
-                <InfoRow label="CPF/CNPJ" value={project.cpfCnpjCliente} />
-                <InfoRow label="Telefone" value={project.telefoneCliente} />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Localização */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                <MapPin className="h-3.5 w-3.5" /> Localização
-              </CardTitle>
+                <CardTitle className="text-xl font-bold">Especificações Técnicas</CardTitle>
+              </div>
             </CardHeader>
-            <CardContent className="pt-0 pb-3">
-              <InfoRow label="Endereço" value={project.endereco} />
-              <InfoRow label="Mapa" value={project.localizacao} link={!!project.localizacao?.startsWith("http")} />
-            </CardContent>
-          </Card>
-
-          {/* Concessionária */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                <Building className="h-3.5 w-3.5" /> Concessionária
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0 pb-3">
-              <InfoRow label="Concessionária" value={project.concessionaria} />
-              <InfoRow label="Tipo conexão" value={project.tipoConexao === "monofasico" ? "Monofásico" : project.tipoConexao === "bifasico" ? "Bifásico" : project.tipoConexao === "trifasico" ? "Trifásico" : null} />
-              <InfoRow label="Disjuntor padrão" value={project.amperagemDisjuntor} />
-              <InfoRow label="Nº Instalação (UC)" value={project.numeroInstalacao} />
-              <InfoRow label="Protocolo" value={project.numeroProtocolo} />
-            </CardContent>
-          </Card>
-
-          {/* Inversor */}
-          {(project.marcaInversor || project.modeloInversor) && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                  <Cpu className="h-3.5 w-3.5" /> Inversor
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0 pb-3">
-                <InfoRow label="Marca" value={project.marcaInversor} />
-                <InfoRow label="Modelo" value={project.modeloInversor} />
-                <InfoRow label="Potência" value={project.potenciaInversor ? `${project.potenciaInversor} kW` : null} />
-                <InfoRow label="Quantidade" value={project.quantidadeInversor} />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Painel */}
-          {(project.marcaPainel || project.modeloPainel) && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                  <Sun className="h-3.5 w-3.5" /> Módulos Fotovoltaicos
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0 pb-3">
-                <InfoRow label="Marca" value={project.marcaPainel} />
-                <InfoRow label="Modelo" value={project.modeloPainel} />
-                <InfoRow label="Potência unit." value={project.potenciaPainel ? `${project.potenciaPainel} Wp` : null} />
-                <InfoRow label="Quantidade" value={project.quantidadePaineis} />
-                <InfoRow label="Total do sistema" value={project.potencia ? `${project.potencia} kWp` : null} />
-              </CardContent>
-            </Card>
-          )}
-
-          {project.description && (
-            <Card>
-              <CardContent className="pt-4 pb-3">
-                <p className="text-xs text-muted-foreground mb-1">Observações</p>
-                <p className="text-xs leading-relaxed">{project.description}</p>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Upload */}
-          <DocumentUploadCard projectId={id!} />
-        </div>
-
-        {/* Right column: Docs + Timeline */}
-        <div className="lg:col-span-2 space-y-4">
-          {/* Documents */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <FileText className="h-4 w-4 text-primary" />
-                Documentos ({docs.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {docsLoading ? (
-                <div className="space-y-2">{Array(3).fill(0).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
-              ) : docs.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-6">Nenhum documento enviado ainda.</p>
-              ) : (
+            <CardContent className="p-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-2">
                 <div className="space-y-2">
-                  {docs.map(doc => (
-                    <div key={doc.id} className="flex items-center gap-3 p-2.5 rounded-md border border-border/60 bg-card" data-testid={`doc-item-${doc.id}`}>
-                      <FileText className="h-4 w-4 text-primary flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{doc.name}</p>
-                        <p className="text-xs text-muted-foreground">{DOC_TYPE_LABELS[doc.docType] || doc.docType}</p>
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-primary mb-4">Dados da Unidade</h4>
+                  <InfoRow label="Cliente" value={project.nomeCliente} />
+                  <InfoRow label="CPF/CNPJ" value={project.cpfCnpjCliente} />
+                  <InfoRow label="Endereço" value={project.endereco} />
+                  <InfoRow label="Localização" value={project.localizacao} link />
+                </div>
+                <div className="space-y-2 mt-8 md:mt-0">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-primary mb-4">Equipamentos & Potência</h4>
+                  <div className="p-4 rounded-2xl bg-muted/30 border border-border/40 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Zap className="h-4 w-4 text-amber-500" />
+                        <span className="text-sm font-bold">Potência Total</span>
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <Badge variant="outline" className="text-xs">
-                          {doc.uploadedByRole === "admin" ? "Randoli" : "Você"}
-                        </Badge>
-                        <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer">
-                          <Button size="sm" variant="outline" data-testid={`button-view-doc-${doc.id}`}>Ver</Button>
-                        </a>
+                      <span className="text-lg font-black">{project.potencia} kWp</span>
+                    </div>
+                    <div className="h-px bg-border/40" />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Módulos</p>
+                        <p className="text-xs font-bold truncate" title={project.modeloPainel || undefined}>{project.modeloPainel || "-"}</p>
+                        <p className="text-[10px] font-medium text-muted-foreground">{project.quantidadePaineis} unidades</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Inversor</p>
+                        <p className="text-xs font-bold truncate" title={project.modeloInversor || undefined}>{project.modeloInversor || "-"}</p>
+                        <p className="text-[10px] font-medium text-muted-foreground">{project.potenciaInversor} kW</p>
                       </div>
                     </div>
-                  ))}
+                  </div>
                 </div>
-              )}
+              </div>
             </CardContent>
           </Card>
 
-          {/* Timeline */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Activity className="h-4 w-4 text-primary" />
-                Histórico de Atualizações
-              </CardTitle>
+          {/* Document Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <DocumentUploadCard projectId={project.id} />
+            
+            <Card className="border-border/40 shadow-xl shadow-black/5 overflow-hidden rounded-3xl">
+              <CardHeader className="bg-muted/30 border-b border-border/40 px-8 py-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-sky-500/10 flex items-center justify-center">
+                      <FileText className="h-5 w-5 text-sky-500" />
+                    </div>
+                    <CardTitle className="text-lg font-bold">Documentos ({docs.length})</CardTitle>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {docsLoading ? (
+                  <div className="p-6 space-y-3">
+                    <Skeleton className="h-14 w-full rounded-2xl" />
+                    <Skeleton className="h-14 w-full rounded-2xl" />
+                  </div>
+                ) : docs.length === 0 ? (
+                  <div className="py-12 px-8 text-center text-muted-foreground">
+                    <p className="text-sm font-medium">Nenhum documento anexado.</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-border/40 max-h-[400px] overflow-y-auto">
+                    {docs.map(doc => (
+                      <div key={doc.id} className="flex items-center justify-between p-5 group hover:bg-muted/30 transition-colors">
+                        <div className="flex items-center gap-4 min-w-0">
+                          <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center shrink-0 group-hover:bg-background transition-colors">
+                            <FileText className="h-5 w-5 text-muted-foreground group-hover:text-sky-500 transition-colors" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold truncate pr-2">{doc.name}</p>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{DOC_TYPE_LABELS[doc.docType]}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button variant="ghost" size="icon" asChild className="rounded-full h-9 w-9 hover:bg-sky-50 hover:text-sky-600 transition-colors">
+                            <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          </Button>
+                          {doc.uploadedByRole === "integrador" && (
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="rounded-full h-9 w-9 hover:bg-red-50 hover:text-red-600 transition-colors"
+                              onClick={() => deleteDocMut.mutate(doc.id)}
+                              disabled={deleteDocMut.isPending}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Right Column: Timeline and Chat */}
+        <div className="space-y-8">
+          
+          {/* Payment Card if needed */}
+          {(project.status === "aprovado_pagamento_pendente" || project.paymentStatus === "pending") && (
+            <Card className="border-amber-200 bg-amber-50/50 dark:bg-amber-900/10 dark:border-amber-900/40 shadow-lg shadow-amber-500/5 rounded-3xl overflow-hidden">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                    <DollarSign className="h-5 w-5 text-amber-600" />
+                  </div>
+                  <CardTitle className="text-lg font-bold text-amber-800 dark:text-amber-400">Pagamento Pendente</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm font-medium text-amber-700/80 dark:text-amber-400/80">
+                  O projeto técnico foi aprovado! Realize o pagamento para iniciar a elaboração dos documentos.
+                </p>
+                <div className="pt-2">
+                  {project.pixQrCode && project.pixQrCodeBase64 && (
+                    <PixSection qrCode={project.pixQrCode} qrCodeBase64={project.pixQrCodeBase64} />
+                  )}
+                  {project.paymentLink && (
+                    <MercadoPagoBrick preferenceId={project.paymentId || ""} paymentLink={project.paymentLink} />
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Timeline Card */}
+          <Card className="border-border/40 shadow-xl shadow-black/5 overflow-hidden rounded-3xl">
+            <CardHeader className="bg-muted/30 border-b border-border/40 px-8 py-6">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Activity className="h-5 w-5 text-primary" />
+                </div>
+                <CardTitle className="text-lg font-bold">Linha do Tempo</CardTitle>
+              </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-8">
               {tlLoading ? (
-                <div className="space-y-4">{Array(3).fill(0).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
+                <div className="space-y-4">
+                  <Skeleton className="h-12 w-full rounded-xl" />
+                  <Skeleton className="h-12 w-full rounded-xl" />
+                </div>
               ) : tl.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-6">Nenhuma atualização ainda.</p>
+                <p className="text-center text-sm text-muted-foreground font-medium py-8">Aguardando movimentações.</p>
               ) : (
-                <div className="pt-1">
+                <div className="space-y-0">
                   {tl.map((entry, i) => (
                     <TimelineItem key={entry.id} entry={entry} isLast={i === tl.length - 1} />
                   ))}
@@ -798,15 +785,13 @@ export default function PortalProjetoPage() {
             </CardContent>
           </Card>
 
-          {/* Chat */}
+          {/* Chat Panel */}
           {user && id && (
-            <div className="h-[420px]">
-              <ChatPanel
-                projectId={id}
-                currentUserId={user.id}
-                currentUserRole={user.role}
-              />
-            </div>
+            <ChatPanel 
+              projectId={id} 
+              currentUserId={user.id} 
+              currentUserRole={user.role} 
+            />
           )}
         </div>
       </div>

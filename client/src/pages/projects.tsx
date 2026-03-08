@@ -45,14 +45,14 @@ type ProjectWithClient = Project & {
 function InfoRow({ label, value, link }: { label: string; value?: string | null; link?: boolean }) {
   if (!value) return null;
   return (
-    <div className="flex gap-2 py-1.5 border-b border-border/40 last:border-0">
-      <span className="text-xs text-muted-foreground min-w-[130px] flex-shrink-0">{label}</span>
+    <div className="flex gap-4 py-2 border-b border-border/40 last:border-0 hover:bg-muted/30 transition-colors px-2 -mx-2 rounded-sm">
+      <span className="text-xs font-semibold text-muted-foreground min-w-[140px] flex-shrink-0 uppercase tracking-wider">{label}</span>
       {link ? (
-        <a href={value} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-primary flex items-center gap-1 hover:underline">
+        <a href={value} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-primary flex items-center gap-1 hover:underline decoration-primary/30 underline-offset-2">
           Abrir mapa <ExternalLink className="h-3 w-3" />
         </a>
       ) : (
-        <span className="text-xs font-medium flex-1">{value}</span>
+        <span className="text-xs font-medium flex-1 text-foreground/90">{value}</span>
       )}
     </div>
   );
@@ -236,412 +236,494 @@ function ProjectDetailSheet({
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent className="w-full sm:max-w-2xl overflow-y-auto p-0">
-        <SheetHeader className="px-6 py-4 border-b border-border sticky top-0 bg-background z-10">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1">
+      <SheetContent className="w-full sm:max-w-2xl overflow-y-auto p-0 border-l border-border/50 shadow-2xl">
+        <SheetHeader className="px-6 py-5 border-b border-border/60 sticky top-0 bg-background/95 backdrop-blur-sm z-10 shadow-sm">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1 space-y-1">
               {project.ticketNumber && (
-                <p className="text-xs font-mono text-primary font-semibold mb-0.5 flex items-center gap-1">
-                  <Hash className="h-3 w-3" />{project.ticketNumber}
-                </p>
+                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20">
+                  <Hash className="h-3 w-3 text-primary" />
+                  <span className="text-[10px] font-mono text-primary font-bold uppercase tracking-tighter">
+                    {project.ticketNumber}
+                  </span>
+                </div>
               )}
-              <SheetTitle className="text-base leading-tight">{project.title}</SheetTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Integrador: {(project as any).integrador?.name || project.client?.name || "—"}
-                {((project as any).integrador?.cpfCnpj || project.client?.cpfCnpj) ? ` (${(project as any).integrador?.cpfCnpj || project.client?.cpfCnpj})` : ""}
-                {project.nomeCliente ? ` · Cliente: ${project.nomeCliente}` : ""}
-              </p>
+              <SheetTitle className="text-xl font-bold tracking-tight text-foreground">{project.title}</SheetTitle>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <User className="h-3 w-3" />
+                  <span>{(project as any).integrador?.name || project.client?.name || "—"}</span>
+                </div>
+                {project.nomeCliente && (
+                  <>
+                    <span className="text-muted-foreground/30">•</span>
+                    <div className="flex items-center gap-1">
+                      <Activity className="h-3 w-3" />
+                      <span>{project.nomeCliente}</span>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${getStatusBadge(project.status)}`}>
+            <Badge className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider shadow-sm border-0 ${getStatusBadge(project.status)}`}>
               {getStatusLabel(project.status)}
-            </span>
+            </Badge>
           </div>
         </SheetHeader>
 
-        <div className="p-6 space-y-5">
+        <div className="p-6 space-y-8 pb-12">
           {/* Admin Controls */}
-          <Card className="border-primary/30 bg-primary/5">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Atualizar Projeto</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Alterar Status</Label>
-                  <Select value={newStatus} onValueChange={setNewStatus}>
-                    <SelectTrigger data-testid="select-admin-status">
-                      <SelectValue placeholder={getStatusLabel(project.status)} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {statusConfigs.sort((a, b) => a.sortOrder - b.sortOrder).map(c => (
-                        <SelectItem key={c.key} value={c.key}>{c.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+          <section className="space-y-4">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+              <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Gestão do Projeto</h3>
+            </div>
+            <Card className="border-border/50 bg-muted/30 shadow-sm overflow-visible">
+              <CardContent className="p-5 space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Status Atual</Label>
+                    <Select value={newStatus} onValueChange={setNewStatus}>
+                      <SelectTrigger data-testid="select-admin-status" className="bg-background/50 border-border/40 hover:bg-background transition-colors h-10">
+                        <SelectValue placeholder={getStatusLabel(project.status)} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {statusConfigs.sort((a, b) => a.sortOrder - b.sortOrder).map(c => (
+                          <SelectItem key={c.key} value={c.key} className="text-xs">{c.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Protocolo Concessionária</Label>
+                    <div className="relative">
+                      <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50" />
+                      <Input
+                        value={newProtocolo}
+                        onChange={e => setNewProtocolo(e.target.value)}
+                        placeholder={project.numeroProtocolo || "Informe o protocolo"}
+                        data-testid="input-admin-protocolo"
+                        className="bg-background/50 border-border/40 hover:bg-background transition-colors pl-9 h-10"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Nº Protocolo da Concessionária</Label>
-                  <Input
-                    value={newProtocolo}
-                    onChange={e => setNewProtocolo(e.target.value)}
-                    placeholder={project.numeroProtocolo || "Informe após protocolar"}
-                    data-testid="input-admin-protocolo"
-                  />
-                </div>
-              </div>
-              {canEditValor && (
-              <div className="space-y-1.5">
-                <Label className="text-xs">Valor do Projeto (R$)</Label>
-                <Input
-                  value={newValor}
-                  onChange={e => setNewValor(e.target.value)}
-                  placeholder={project.valor || "Ex: 12.500,00"}
-                  data-testid="input-admin-valor"
-                />
-                {project.valor && (
-                  <p className="text-xs text-muted-foreground">Valor atual: <span className="font-semibold text-foreground">R$ {project.valor}</span></p>
-                )}
-                {project.paymentStatus && (
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                      project.paymentStatus === "approved" ? "bg-green-100 text-green-700" :
-                      project.paymentStatus === "pending" ? "bg-yellow-100 text-yellow-700" :
-                      "bg-red-100 text-red-700"
-                    }`}>
-                      {project.paymentStatus === "approved" ? "✓ Pago" :
-                       project.paymentStatus === "pending" ? "⏳ Pagamento pendente" :
-                       `Pagamento: ${project.paymentStatus}`}
-                    </span>
-                    {project.paymentLink && (
-                      <a href={project.paymentLink} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1" data-testid="link-admin-payment">
-                        <ExternalLink className="h-3 w-3" /> Link MP
-                      </a>
-                    )}
+
+                {canEditValor && (
+                  <div className="space-y-4 pt-2 border-t border-border/40">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 items-end">
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Valor do Projeto</Label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground/50">R$</span>
+                          <Input
+                            value={newValor}
+                            onChange={e => setNewValor(e.target.value)}
+                            placeholder={project.valor || "0,00"}
+                            data-testid="input-admin-valor"
+                            className="bg-background/50 border-border/40 hover:bg-background transition-colors pl-9 font-mono h-10"
+                          />
+                        </div>
+                        {project.valor && (
+                          <p className="text-[10px] text-muted-foreground flex items-center gap-1.5 ml-1">
+                            <CreditCard className="h-3 w-3" /> Valor atual: <span className="font-bold text-foreground">R$ {project.valor}</span>
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        {project.paymentStatus && (
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="outline" className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border-0 shadow-sm ${
+                              project.paymentStatus === "approved" ? "bg-emerald-500/10 text-emerald-600" :
+                              project.paymentStatus === "pending" ? "bg-amber-500/10 text-amber-600" :
+                              "bg-rose-500/10 text-rose-600"
+                            }`}>
+                              {project.paymentStatus === "approved" ? "✓ Pago" :
+                               project.paymentStatus === "pending" ? "⏳ Pendente" :
+                               project.paymentStatus}
+                            </Badge>
+                            {project.paymentLink && (
+                              <a href={project.paymentLink} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/5 border border-primary/10" data-testid="link-admin-payment">
+                                <ExternalLink className="h-3 w-3" /> MP
+                              </a>
+                            )}
+                          </div>
+                        )}
+                        <div className="flex gap-2">
+                          {project.status === "aprovado_pagamento_pendente" && !project.paymentId && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="w-full text-[10px] font-bold uppercase tracking-wider h-10 border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100 no-default-hover-elevate"
+                              disabled={generatePaymentMut.isPending}
+                              onClick={() => generatePaymentMut.mutate(project.id)}
+                              data-testid="button-generate-payment"
+                            >
+                              <CreditCard className="h-3.5 w-3.5 mr-2" />
+                              {generatePaymentMut.isPending ? "Gerando..." : "Gerar Pagamento"}
+                            </Button>
+                          )}
+                          {project.paymentId && project.paymentStatus !== "approved" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="w-full text-[10px] font-bold uppercase tracking-wider h-10 border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 no-default-hover-elevate"
+                              disabled={verifyPaymentMut.isPending}
+                              onClick={() => verifyPaymentMut.mutate(project.id)}
+                              data-testid="button-verify-payment"
+                            >
+                              <RefreshCw className={`h-3.5 w-3.5 mr-2 ${verifyPaymentMut.isPending ? "animate-spin" : ""}`} />
+                              {verifyPaymentMut.isPending ? "Sincronizando..." : "Verificar MP"}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
-                {project.status === "aprovado_pagamento_pendente" && !project.paymentId && (
+
+                {/* Assignment */}
+                {internalUsers.length > 0 && (
+                  <div className="pt-4 border-t border-border/40">
+                    <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-3">Atribuição de Responsáveis</Label>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] text-muted-foreground font-medium">Engenharia</Label>
+                        <Select value={assignEngineerId} onValueChange={setAssignEngineerId}>
+                          <SelectTrigger className="h-9 text-xs bg-background/50 border-border/40" data-testid="select-assign-engineer">
+                            <SelectValue placeholder={(project as any).assignedEngineerId ? internalUsers.find(u => u.id === (project as any).assignedEngineerId)?.name ?? "Atribuído" : "Nenhum"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__" className="text-xs">Nenhum</SelectItem>
+                            {internalUsers.map(u => <SelectItem key={u.id} value={u.id} className="text-xs">{u.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] text-muted-foreground font-medium">Instalação</Label>
+                        <Select value={assignInstallerId} onValueChange={setAssignInstallerId}>
+                          <SelectTrigger className="h-9 text-xs bg-background/50 border-border/40" data-testid="select-assign-installer">
+                            <SelectValue placeholder={(project as any).assignedInstallerId ? internalUsers.find(u => u.id === (project as any).assignedInstallerId)?.name ?? "Atribuído" : "Nenhum"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__" className="text-xs">Nenhum</SelectItem>
+                            {internalUsers.map(u => <SelectItem key={u.id} value={u.id} className="text-xs">{u.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] text-muted-foreground font-medium">Gestão</Label>
+                        <Select value={assignManagerId} onValueChange={setAssignManagerId}>
+                          <SelectTrigger className="h-9 text-xs bg-background/50 border-border/40" data-testid="select-assign-manager">
+                            <SelectValue placeholder={(project as any).assignedManagerId ? internalUsers.find(u => u.id === (project as any).assignedManagerId)?.name ?? "Atribuído" : "Nenhum"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__" className="text-xs">Nenhum</SelectItem>
+                            {internalUsers.map(u => <SelectItem key={u.id} value={u.id} className="text-xs">{u.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="pt-4 border-t border-border/40 flex justify-end">
                   <Button
-                    size="sm"
-                    variant="outline"
-                    className="mt-2 text-xs border-yellow-400 text-yellow-700 hover:bg-yellow-50"
-                    disabled={generatePaymentMut.isPending}
-                    onClick={() => generatePaymentMut.mutate(project.id)}
-                    data-testid="button-generate-payment"
+                    size="default"
+                    className="w-full sm:w-auto px-8 font-bold uppercase tracking-wider text-xs shadow-md"
+                    disabled={updateMut.isPending}
+                    onClick={handleUpdateStatus}
+                    data-testid="button-admin-update-project"
                   >
-                    <CreditCard className="h-3.5 w-3.5 mr-1.5" />
-                    {generatePaymentMut.isPending ? "Gerando..." : "Gerar Link de Pagamento"}
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    {updateMut.isPending ? "Salvando..." : "Salvar Alterações"}
                   </Button>
-                )}
-                {project.paymentId && project.paymentStatus !== "approved" && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="mt-2 text-xs border-blue-400 text-blue-700 hover:bg-blue-50"
-                    disabled={verifyPaymentMut.isPending}
-                    onClick={() => verifyPaymentMut.mutate(project.id)}
-                    data-testid="button-verify-payment"
-                  >
-                    <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${verifyPaymentMut.isPending ? "animate-spin" : ""}`} />
-                    {verifyPaymentMut.isPending ? "Verificando..." : "Verificar Pagamento MP"}
-                  </Button>
-                )}
-              </div>
-              )}
-              {/* Assignment */}
-              {internalUsers.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Engenheiro responsável</Label>
-                    <Select value={assignEngineerId} onValueChange={setAssignEngineerId}>
-                      <SelectTrigger className="h-8 text-xs" data-testid="select-assign-engineer">
-                        <SelectValue placeholder={(project as any).assignedEngineerId ? internalUsers.find(u => u.id === (project as any).assignedEngineerId)?.name ?? "Atribuído" : "Nenhum"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__none__">Nenhum</SelectItem>
-                        {internalUsers.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Instalador</Label>
-                    <Select value={assignInstallerId} onValueChange={setAssignInstallerId}>
-                      <SelectTrigger className="h-8 text-xs" data-testid="select-assign-installer">
-                        <SelectValue placeholder={(project as any).assignedInstallerId ? internalUsers.find(u => u.id === (project as any).assignedInstallerId)?.name ?? "Atribuído" : "Nenhum"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__none__">Nenhum</SelectItem>
-                        {internalUsers.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Gerente</Label>
-                    <Select value={assignManagerId} onValueChange={setAssignManagerId}>
-                      <SelectTrigger className="h-8 text-xs" data-testid="select-assign-manager">
-                        <SelectValue placeholder={(project as any).assignedManagerId ? internalUsers.find(u => u.id === (project as any).assignedManagerId)?.name ?? "Atribuído" : "Nenhum"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__none__">Nenhum</SelectItem>
-                        {internalUsers.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
                 </div>
-              )}
+              </CardContent>
+            </Card>
+          </section>
 
-              <Button size="sm" disabled={updateMut.isPending} onClick={handleUpdateStatus} data-testid="button-admin-update-project">
-                <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
-                {updateMut.isPending ? "Salvando..." : "Salvar Alterações"}
-              </Button>
-
-              <Separator />
-
-              <div className="space-y-2">
-                <Label className="text-xs">Adicionar nota ao histórico</Label>
+          {/* Admin — Notes */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+              <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Notas Internas</h3>
+            </div>
+            <Card className="border-border/50 bg-muted/30 shadow-sm">
+              <CardContent className="p-5 space-y-4">
                 <Textarea
                   value={timelineNote}
                   onChange={e => setTimelineNote(e.target.value)}
-                  placeholder="Ex: Documentação verificada. Iniciando elaboração do projeto técnico..."
-                  rows={2}
+                  placeholder="Descreva uma atualização importante ou observação técnica..."
+                  className="bg-background/50 border-border/40 hover:bg-background transition-colors min-h-[100px] text-sm resize-none"
                   data-testid="textarea-admin-note"
                 />
-                <Button size="sm" variant="outline" onClick={handleAddNote} disabled={addTimelineMut.isPending || !timelineNote.trim()} data-testid="button-admin-add-note">
-                  {addTimelineMut.isPending ? "Adicionando..." : "Adicionar Nota"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                <div className="flex justify-end">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="font-bold uppercase tracking-wider text-[10px] h-9 px-4 border-border/60"
+                    onClick={handleAddNote}
+                    disabled={addTimelineMut.isPending || !timelineNote.trim()}
+                    data-testid="button-admin-add-note"
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-1.5" />
+                    {addTimelineMut.isPending ? "Adicionando..." : "Adicionar Nota"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </section>
 
           {/* Admin — Enviar Documentos (Projeto + ART) */}
-          <Card className="border-dashed border-border">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Upload className="h-3.5 w-3.5 text-primary" /> Enviar Documentos ao Integrador
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Projeto Técnico */}
-                <label className="cursor-pointer block" data-testid="upload-admin-projeto">
-                  <div className={`flex items-center gap-3 p-3 rounded-lg border-2 border-dashed transition-colors ${
-                    uploadingDoc === "projeto_aprovado"
-                      ? "border-primary/40 bg-primary/5"
-                      : "border-border hover:border-primary/40 hover:bg-muted/30"
-                  }`}>
-                    <FileText className={`h-5 w-5 flex-shrink-0 ${uploadingDoc === "projeto_aprovado" ? "text-primary animate-pulse" : "text-muted-foreground"}`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold">Projeto Elétrico</p>
-                      <p className="text-xs text-muted-foreground">
-                        {uploadingDoc === "projeto_aprovado" ? "Enviando..." : "PDF, JPG ou PNG"}
-                      </p>
-                    </div>
-                    {uploadingDoc === "projeto_aprovado" && <CheckCircle2 className="h-4 w-4 text-primary animate-pulse flex-shrink-0" />}
-                  </div>
-                  <input
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    className="sr-only"
-                    disabled={!!uploadingDoc}
-                    onChange={e => handleAdminUpload(e, "projeto_aprovado")}
-                  />
-                </label>
-
-                {/* ART */}
-                <label className="cursor-pointer block" data-testid="upload-admin-art">
-                  <div className={`flex items-center gap-3 p-3 rounded-lg border-2 border-dashed transition-colors ${
-                    uploadingDoc === "art"
-                      ? "border-primary/40 bg-primary/5"
-                      : "border-border hover:border-primary/40 hover:bg-muted/30"
-                  }`}>
-                    <FileText className={`h-5 w-5 flex-shrink-0 ${uploadingDoc === "art" ? "text-primary animate-pulse" : "text-muted-foreground"}`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold">ART</p>
-                      <p className="text-xs text-muted-foreground">
-                        {uploadingDoc === "art" ? "Enviando..." : "Anotação de Resp. Técnica"}
-                      </p>
-                    </div>
-                    {uploadingDoc === "art" && <CheckCircle2 className="h-4 w-4 text-primary animate-pulse flex-shrink-0" />}
-                  </div>
-                  <input
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    className="sr-only"
-                    disabled={!!uploadingDoc}
-                    onChange={e => handleAdminUpload(e, "art")}
-                  />
-                </label>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Os documentos enviados ficam visíveis para o integrador no portal deles.
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Titular */}
-          {(project.nomeCliente || project.cpfCnpjCliente) && (
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                <User className="h-3.5 w-3.5" /> Titular da Instalação
-              </p>
-              <InfoRow label="Nome" value={project.nomeCliente} />
-              <InfoRow label="CPF / CNPJ" value={project.cpfCnpjCliente} />
-              <InfoRow label="Telefone" value={project.telefoneCliente} />
+          <section className="space-y-4">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+              <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Documentação Técnica</h3>
             </div>
-          )}
-
-          {/* Localização */}
-          <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
-              <MapPin className="h-3.5 w-3.5" /> Localização
-            </p>
-            <InfoRow label="Endereço" value={project.endereco} />
-            <InfoRow label="Google Maps" value={project.localizacao} link={project.localizacao?.startsWith("http")} />
-          </div>
-
-          {/* Concessionária */}
-          <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
-              <Building className="h-3.5 w-3.5" /> Concessionária
-            </p>
-            <InfoRow label="Concessionária" value={project.concessionaria} />
-            <InfoRow label="Tipo Conexão" value={
-              project.tipoConexao === "monofasico" ? "Monofásico" :
-              project.tipoConexao === "bifasico" ? "Bifásico" :
-              project.tipoConexao === "trifasico" ? "Trifásico" : null
-            } />
-            <InfoRow label="Disjuntor Padrão" value={project.amperagemDisjuntor} />
-            <InfoRow label="Nº Instalação (UC)" value={project.numeroInstalacao} />
-            <InfoRow label="Protocolo" value={project.numeroProtocolo} />
-          </div>
-
-          {/* Inversor */}
-          {(project.marcaInversor || project.modeloInversor) && (
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                <Cpu className="h-3.5 w-3.5" /> Inversor Solar
-              </p>
-              <InfoRow label="Marca" value={project.marcaInversor} />
-              <InfoRow label="Modelo" value={project.modeloInversor} />
-              <InfoRow label="Potência" value={project.potenciaInversor ? `${project.potenciaInversor} kW` : null} />
-              <InfoRow label="Quantidade" value={project.quantidadeInversor} />
-            </div>
-          )}
-
-          {/* Painel */}
-          {(project.marcaPainel || project.modeloPainel) && (
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                <Sun className="h-3.5 w-3.5" /> Módulos Fotovoltaicos
-              </p>
-              <InfoRow label="Marca" value={project.marcaPainel} />
-              <InfoRow label="Modelo" value={project.modeloPainel} />
-              <InfoRow label="Potência Unit." value={project.potenciaPainel ? `${project.potenciaPainel} Wp` : null} />
-              <InfoRow label="Quantidade" value={project.quantidadePaineis} />
-              <InfoRow label="Potência Total" value={project.potencia ? `${project.potencia} kWp` : null} />
-            </div>
-          )}
-
-          {project.description && (
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Observações</p>
-              <p className="text-xs leading-relaxed">{project.description}</p>
-            </div>
-          )}
-
-          <Separator />
-
-          {/* Documents */}
-          <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-1.5">
-              <FileText className="h-3.5 w-3.5" /> Documentos ({docs.length})
-            </p>
-            {docsLoading ? (
-              <div className="space-y-2">{Array(3).fill(0).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
-            ) : docs.length === 0 ? (
-              <p className="text-xs text-muted-foreground">Nenhum documento enviado.</p>
-            ) : (
-              <div className="space-y-2">
-                {docs.map(doc => (
-                  <div key={doc.id} className="flex items-center gap-2.5 p-2.5 rounded-md border border-border/60 bg-muted/30">
-                    <FileText className="h-3.5 w-3.5 text-primary flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium truncate">{doc.name}</p>
-                      <p className="text-xs text-muted-foreground">{DOC_TYPE_LABELS[doc.docType] || doc.docType}</p>
-                    </div>
-                    <Badge variant="outline" className="text-xs flex-shrink-0">
-                      {doc.uploadedByRole === "admin" ? "Randoli" : "Integrador"}
-                    </Badge>
-                    <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer">
-                      <Button size="sm" variant="outline" data-testid={`button-view-doc-${doc.id}`}>Ver</Button>
-                    </a>
-                    {canDeleteDocs && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10 p-1.5 h-auto"
-                        disabled={deleteDocMut.isPending}
-                        onClick={() => {
-                          if (confirm("Tem certeza que deseja remover este documento?")) {
-                            deleteDocMut.mutate(doc.id);
-                          }
-                        }}
-                        data-testid={`button-delete-doc-${doc.id}`}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <Separator />
-
-          {/* Timeline */}
-          <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-1.5">
-              <Activity className="h-3.5 w-3.5" /> Histórico
-            </p>
-            {tlLoading ? (
-              <div className="space-y-3">{Array(3).fill(0).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
-            ) : timeline.length === 0 ? (
-              <p className="text-xs text-muted-foreground">Nenhuma atualização.</p>
-            ) : (
-              <div className="space-y-0">
-                {timeline.map((entry, i) => (
-                  <div key={entry.id} className="flex gap-3">
-                    <div className="flex flex-col items-center">
-                      <div className={`h-6 w-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${entry.createdByRole === "admin" ? "bg-primary/15" : "bg-muted"}`}>
-                        <Zap className="h-3 w-3 text-primary" />
+            <Card className="border-border/50 bg-muted/30 shadow-sm">
+              <CardContent className="p-5 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Projeto Técnico */}
+                  <label className="cursor-pointer group" data-testid="upload-admin-projeto">
+                    <div className={`flex items-center gap-4 p-4 rounded-xl border-2 border-dashed transition-all duration-200 ${
+                      uploadingDoc === "projeto_aprovado"
+                        ? "border-primary bg-primary/5 shadow-inner"
+                        : "border-border/60 bg-background/50 group-hover:border-primary/40 group-hover:bg-background group-hover:shadow-sm"
+                    }`}>
+                      <div className={`p-2 rounded-lg ${uploadingDoc === "projeto_aprovado" ? "bg-primary/20" : "bg-muted group-hover:bg-primary/10 transition-colors"}`}>
+                        <FileText className={`h-5 w-5 ${uploadingDoc === "projeto_aprovado" ? "text-primary animate-pulse" : "text-muted-foreground group-hover:text-primary transition-colors"}`} />
                       </div>
-                      {i < timeline.length - 1 && <div className="w-px flex-1 bg-border min-h-[20px] mt-1" />}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-foreground">Projeto Elétrico</p>
+                        <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tight">
+                          {uploadingDoc === "projeto_aprovado" ? "Enviando arquivo..." : "Clique para selecionar"}
+                        </p>
+                      </div>
+                      {uploadingDoc === "projeto_aprovado" && <RefreshCw className="h-4 w-4 text-primary animate-spin flex-shrink-0" />}
                     </div>
-                    <div className="pb-3 flex-1 min-w-0">
-                      <p className="text-xs font-medium">{entry.event}</p>
-                      {entry.details && <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{entry.details}</p>}
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {entry.createdByRole === "admin" ? "Randoli" : "Integrador"} · {entry.createdAt ? new Date(entry.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : ""}
-                      </p>
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      className="sr-only"
+                      disabled={!!uploadingDoc}
+                      onChange={e => handleAdminUpload(e, "projeto_aprovado")}
+                    />
+                  </label>
+
+                  {/* ART */}
+                  <label className="cursor-pointer group" data-testid="upload-admin-art">
+                    <div className={`flex items-center gap-4 p-4 rounded-xl border-2 border-dashed transition-all duration-200 ${
+                      uploadingDoc === "art"
+                        ? "border-primary bg-primary/5 shadow-inner"
+                        : "border-border/60 bg-background/50 group-hover:border-primary/40 group-hover:bg-background group-hover:shadow-sm"
+                    }`}>
+                      <div className={`p-2 rounded-lg ${uploadingDoc === "art" ? "bg-primary/20" : "bg-muted group-hover:bg-primary/10 transition-colors"}`}>
+                        <FileText className={`h-5 w-5 ${uploadingDoc === "art" ? "text-primary animate-pulse" : "text-muted-foreground group-hover:text-primary transition-colors"}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-foreground">ART</p>
+                        <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tight">
+                          {uploadingDoc === "art" ? "Enviando arquivo..." : "Clique para selecionar"}
+                        </p>
+                      </div>
+                      {uploadingDoc === "art" && <RefreshCw className="h-4 w-4 text-primary animate-spin flex-shrink-0" />}
                     </div>
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      className="sr-only"
+                      disabled={!!uploadingDoc}
+                      onChange={e => handleAdminUpload(e, "art")}
+                    />
+                  </label>
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+
+          <Tabs defaultValue="detalhes" className="w-full">
+            <TabsList className="grid w-full grid-cols-4 h-11 bg-muted/50 p-1 border border-border/40 rounded-xl mb-6">
+              <TabsTrigger value="detalhes" className="text-[10px] font-bold uppercase tracking-wider rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Detalhes</TabsTrigger>
+              <TabsTrigger value="equipamento" className="text-[10px] font-bold uppercase tracking-wider rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Equipamentos</TabsTrigger>
+              <TabsTrigger value="documentos" className="text-[10px] font-bold uppercase tracking-wider rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Arquivos</TabsTrigger>
+              <TabsTrigger value="timeline" className="text-[10px] font-bold uppercase tracking-wider rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Histórico</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="detalhes" className="space-y-8 mt-0 focus-visible:ring-0">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Instalação</h3>
                   </div>
-                ))}
+                  <div className="bg-muted/20 rounded-xl p-4 border border-border/30 space-y-1">
+                    <InfoRow label="Concessionária" value={project.concessionaria} />
+                    <InfoRow label="Nº Instalação" value={project.numeroInstalacao} />
+                    <InfoRow label="Tipo Conexão" value={project.tipoConexao ? project.tipoConexao.charAt(0).toUpperCase() + project.tipoConexao.slice(1) : null} />
+                    <InfoRow label="Disjuntor" value={project.amperagemDisjuntor} />
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Localização</h3>
+                  </div>
+                  <div className="bg-muted/20 rounded-xl p-4 border border-border/30 space-y-1">
+                    <InfoRow label="Endereço" value={`${project.rua || ""}, ${project.numero || ""} - ${project.bairro || ""}`} />
+                    <InfoRow label="Cidade/UF" value={`${project.cidade || ""} / ${project.estado || ""}`} />
+                    <InfoRow label="CEP" value={project.cep} />
+                    <InfoRow label="Mapa" value={project.localizacao} link />
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
 
-          <Separator />
+              <div className="space-y-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Beneficiário</h3>
+                </div>
+                <div className="bg-muted/20 rounded-xl p-4 border border-border/30 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1">
+                  <InfoRow label="Nome Completo" value={project.nomeCliente} />
+                  <InfoRow label="CPF/CNPJ" value={project.cpfCnpjCliente} />
+                  <InfoRow label="Telefone" value={project.telefoneCliente} />
+                </div>
+              </div>
+            </TabsContent>
 
-          {/* Chat */}
-          {project && user && (
-            <div className="h-[380px]">
-              <ChatPanel
-                projectId={project.id}
-                currentUserId={user.id}
-                currentUserRole={user.role}
-              />
+            <TabsContent value="equipamento" className="mt-0 focus-visible:ring-0">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="border-border/40 shadow-sm bg-muted/10">
+                  <CardHeader className="pb-3 border-b border-border/30 bg-muted/20 rounded-t-xl">
+                    <CardTitle className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                      <Cpu className="h-3.5 w-3.5 text-primary" /> Sistema de Inversão
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 space-y-1">
+                    <InfoRow label="Marca" value={project.marcaInversor} />
+                    <InfoRow label="Modelo" value={project.modeloInversor} />
+                    <InfoRow label="Potência" value={project.potenciaInversor} />
+                    <InfoRow label="Quantidade" value={project.quantidadeInversor} />
+                  </CardContent>
+                </Card>
+
+                <Card className="border-border/40 shadow-sm bg-muted/10">
+                  <CardHeader className="pb-3 border-b border-border/30 bg-muted/20 rounded-t-xl">
+                    <CardTitle className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                      <Sun className="h-3.5 w-3.5 text-primary" /> Módulos Fotovoltaicos
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 space-y-1">
+                    <InfoRow label="Marca" value={project.marcaPainel} />
+                    <InfoRow label="Modelo" value={project.modeloPainel} />
+                    <InfoRow label="Potência Unit." value={project.potenciaPainel} />
+                    <InfoRow label="Qtd. Painéis" value={project.quantidadePaineis} />
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="documentos" className="mt-0 focus-visible:ring-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {docsLoading ? (
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <Skeleton key={i} className="h-24 w-full rounded-xl bg-muted" />
+                  ))
+                ) : docs.length > 0 ? (
+                  docs.map(doc => (
+                    <div key={doc.id} className="group relative flex items-center gap-3 p-3 bg-muted/30 border border-border/40 rounded-xl hover:bg-muted/50 transition-colors">
+                      <div className="h-10 w-10 rounded-lg bg-background flex items-center justify-center border border-border/30 group-hover:border-primary/30 transition-colors shadow-sm">
+                        <FileText className="h-5 w-5 text-primary/70" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] font-bold text-foreground truncate uppercase tracking-tight">{DOC_TYPE_LABELS[doc.docType] || "Documento"}</p>
+                        <p className="text-[10px] text-muted-foreground truncate font-mono">{doc.name}</p>
+                      </div>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md" asChild>
+                          <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </a>
+                        </Button>
+                        {canDeleteDocs && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 rounded-md text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => deleteDocMut.mutate(doc.id)}
+                            disabled={deleteDocMut.isPending}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="col-span-full py-12 flex flex-col items-center justify-center text-muted-foreground bg-muted/10 rounded-2xl border border-dashed border-border/60">
+                    <FolderOpen className="h-10 w-10 mb-3 opacity-20" />
+                    <p className="text-xs font-medium uppercase tracking-widest">Nenhum documento arquivado</p>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="timeline" className="mt-0 focus-visible:ring-0">
+              <div className="space-y-6 pl-4 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-gradient-to-b before:from-primary/50 before:via-primary/20 before:to-transparent">
+                {tlLoading ? (
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <Skeleton key={i} className="h-16 w-full rounded-xl bg-muted ml-6" />
+                  ))
+                ) : timeline.length > 0 ? (
+                  timeline.sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()).map((item, i) => (
+                    <div key={item.id} className="relative pl-8">
+                      <div className={`absolute left-[-13px] top-1.5 h-6 w-6 rounded-full border-4 border-background shadow-sm flex items-center justify-center ${
+                        item.createdByRole === "integrador" ? "bg-primary" : "bg-emerald-500"
+                      }`}>
+                        <div className="h-1.5 w-1.5 rounded-full bg-white" />
+                      </div>
+                      <div className="bg-muted/30 border border-border/30 rounded-xl p-4 hover:bg-muted/50 transition-colors shadow-sm">
+                        <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-foreground">
+                            {item.event}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground font-mono">
+                            {new Date(item.createdAt!).toLocaleString("pt-BR", {
+                              day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit"
+                            })}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground/90 leading-relaxed italic">{item.details}</p>
+                        <div className="mt-2 flex items-center gap-1.5">
+                          <Badge variant="outline" className="text-[9px] font-bold uppercase tracking-tighter px-1.5 py-0 border-0 bg-background/60 shadow-none">
+                            {item.createdByRole}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="py-12 flex flex-col items-center justify-center text-muted-foreground bg-muted/10 rounded-2xl border border-dashed border-border/60 ml-6">
+                    <Activity className="h-10 w-10 mb-3 opacity-20" />
+                    <p className="text-xs font-medium uppercase tracking-widest">Início da jornada do projeto</p>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          {/* Chat Panel */}
+          <section className="pt-4 border-t border-border/50">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+              <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Comunicação Direta</h3>
             </div>
-          )}
+            <div className="rounded-2xl border border-border/40 shadow-xl overflow-hidden bg-background">
+              <ChatPanel projectId={project.id} currentUserId={user?.id || ""} currentUserRole={user?.role || "integrador"} />
+            </div>
+          </section>
         </div>
       </SheetContent>
     </Sheet>
@@ -717,283 +799,275 @@ export default function ProjectsPage() {
   });
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold" data-testid="text-page-title">Projetos</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            {projects.length} projeto{projects.length !== 1 ? "s" : ""} ativo{projects.length !== 1 ? "s" : ""}
-            {archived.length > 0 && ` · ${archived.length} arquivado${archived.length !== 1 ? "s" : ""}`}
+    <div className="p-6 space-y-8 max-w-7xl mx-auto pb-20">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/80">Gestão de Operações</span>
+          </div>
+          <h1 className="text-4xl font-black tracking-tight text-foreground" data-testid="text-page-title">Projetos</h1>
+          <p className="text-muted-foreground text-sm font-medium">
+            {projects.length} projeto{projects.length !== 1 ? "s" : ""} em andamento
+            {archived.length > 0 && (
+              <>
+                <span className="mx-2 text-border">|</span>
+                <span className="text-muted-foreground/60">{archived.length} arquivado{archived.length !== 1 ? "s" : ""}</span>
+              </>
+            )}
           </p>
         </div>
+        
+        <Tabs value={tab} onValueChange={v => { setTab(v); setStatusFilter("todos"); setSearch(""); }} className="bg-muted/30 p-1 rounded-xl border border-border/40 w-full md:w-auto">
+          <TabsList className="bg-transparent h-10 gap-1">
+            <TabsTrigger value="ativos" data-testid="tab-ativos" className="rounded-lg px-4 font-bold text-[10px] uppercase tracking-wider data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              <FolderOpen className="h-3.5 w-3.5 mr-2" /> Ativos
+            </TabsTrigger>
+            <TabsTrigger value="arquivados" data-testid="tab-arquivados" className="rounded-lg px-4 font-bold text-[10px] uppercase tracking-wider data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              <Archive className="h-3.5 w-3.5 mr-2" /> Arquivados
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
-      <Tabs value={tab} onValueChange={v => { setTab(v); setStatusFilter("todos"); setSearch(""); }}>
-        <TabsList>
-          <TabsTrigger value="ativos" data-testid="tab-ativos">
-            <FolderOpen className="h-3.5 w-3.5 mr-1.5" /> Ativos ({projects.length})
-          </TabsTrigger>
-          <TabsTrigger value="arquivados" data-testid="tab-arquivados">
-            <Archive className="h-3.5 w-3.5 mr-1.5" /> Arquivados ({archived.length})
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
+      {/* Filters & Search Toolbar */}
+      <Card className="border-border/40 shadow-sm bg-muted/10 overflow-visible">
+        <CardContent className="p-4 flex flex-col lg:flex-row gap-4">
+          <div className="relative flex-1 group">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
+            <Input
+              placeholder="Pesquisar por cliente, integrador, ticket..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="pl-10 h-11 bg-background border-border/40 focus:border-primary/50 transition-all rounded-xl shadow-inner text-sm"
+              data-testid="input-search-projects"
+            />
+          </div>
+          
+          <div className="flex flex-wrap gap-3">
+            <div className="min-w-[200px]">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="h-11 bg-background border-border/40 rounded-xl px-4 text-xs font-semibold" data-testid="select-filter-status">
+                  <div className="flex items-center gap-2">
+                    <Activity className="h-3.5 w-3.5 text-muted-foreground/50" />
+                    <SelectValue />
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="todos" className="text-xs font-medium">Todos os Status</SelectItem>
+                  {statusConfigs.sort((a, b) => a.sortOrder - b.sortOrder).map(c => (
+                    <SelectItem key={c.key} value={c.key} className="text-xs font-medium">{c.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-48">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nome, cliente, concessionária..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="pl-9"
-            data-testid="input-search-projects"
-          />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-52" data-testid="select-filter-status">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos os status</SelectItem>
-            {statusConfigs.sort((a, b) => a.sortOrder - b.sortOrder).map(c => (
-              <SelectItem key={c.key} value={c.key}>{c.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <div className="flex rounded-md border border-border overflow-hidden">
-          <button
-            type="button"
-            onClick={() => setViewMode("grid")}
-            className={`p-2 transition-colors ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted"}`}
-            data-testid="button-view-grid"
-            title="Visualização em grade"
-          >
-            <LayoutGrid className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode("list")}
-            className={`p-2 transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted"}`}
-            data-testid="button-view-list"
-            title="Visualização em lista"
-          >
-            <List className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
+            <div className="flex bg-background border border-border/40 rounded-xl p-1 gap-1 h-11">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setViewMode("grid")}
+                className={`rounded-lg transition-all ${viewMode === "grid" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted"}`}
+                data-testid="button-view-grid"
+                title="Grade"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setViewMode("list")}
+                className={`rounded-lg transition-all ${viewMode === "list" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted"}`}
+                data-testid="button-view-list"
+                title="Lista"
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {Array(6).fill(0).map((_, i) => <Skeleton key={i} className="h-44 w-full rounded-lg" />)}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {Array(6).fill(0).map((_, i) => (
+            <Card key={i} className="border-border/40 overflow-hidden">
+              <div className="h-2 bg-muted animate-pulse" />
+              <CardContent className="p-6 space-y-4">
+                <Skeleton className="h-6 w-3/4 rounded-md" />
+                <Skeleton className="h-4 w-full rounded-md" />
+                <div className="pt-4 flex justify-between">
+                  <Skeleton className="h-4 w-20 rounded-md" />
+                  <Skeleton className="h-4 w-20 rounded-md" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-          <FolderOpen className="h-14 w-14 mb-3 opacity-30" />
-          <p className="font-medium">{tab === "arquivados" ? "Nenhum projeto arquivado" : "Nenhum projeto encontrado"}</p>
-          <p className="text-sm mt-1">
-            {tab === "arquivados" ? "Projetos finalizados aparecem aqui" : "Ajuste os filtros ou aguarde novos pedidos dos integradores"}
+        <div className="flex flex-col items-center justify-center py-32 text-center bg-muted/10 rounded-[2rem] border-2 border-dashed border-border/40">
+          <div className="h-20 w-20 rounded-full bg-muted/50 flex items-center justify-center mb-6">
+            <FolderOpen className="h-10 w-10 text-muted-foreground/30" />
+          </div>
+          <h3 className="text-xl font-bold text-foreground mb-2">
+            {tab === "arquivados" ? "Nenhum projeto arquivado" : "O horizonte está limpo"}
+          </h3>
+          <p className="text-muted-foreground max-w-sm text-sm">
+            {tab === "arquivados" ? "Projetos concluídos ou cancelados serão listados aqui." : "Não encontramos nenhum projeto com os critérios atuais. Tente redefinir seus filtros."}
           </p>
+          {search && (
+            <Button variant="ghost" onClick={() => setSearch("")} className="mt-4 text-primary font-bold uppercase tracking-widest text-[10px]">
+              Limpar Pesquisa
+            </Button>
+          )}
         </div>
       ) : viewMode === "list" ? (
-        <div className="rounded-lg border border-border overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50">
-              <tr>
-                <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Projeto</th>
-                <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground hidden sm:table-cell">Integrador</th>
-                <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground hidden md:table-cell">Potência</th>
-                <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground hidden lg:table-cell">Concessionária</th>
-                <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Status</th>
-                <th className="px-4 py-2.5 text-xs font-medium text-muted-foreground text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {filtered.map(project => (
-                <tr
-                  key={project.id}
-                  className="hover:bg-muted/30 transition-colors cursor-pointer"
-                  onClick={() => tab !== "arquivados" && setDetailProjectId(project.id)}
-                  data-testid={`row-project-${project.id}`}
-                >
-                  <td className="px-4 py-3">
-                    <div className="flex flex-col gap-0.5 min-w-0">
-                      {project.ticketNumber && (
-                        <span className="text-[10px] font-mono text-primary flex items-center gap-0.5">
-                          <Hash className="h-2.5 w-2.5" />{project.ticketNumber}
-                        </span>
-                      )}
-                      <span className="font-medium text-xs truncate max-w-[220px]">{project.title}</span>
-                      {project.nomeCliente && (
-                        <span className="text-[10px] text-muted-foreground truncate max-w-[220px]">
-                          Cliente: {project.nomeCliente}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 hidden sm:table-cell">
-                    <span className="text-xs truncate max-w-[160px] block">{project.integrador?.name || project.client?.name || "—"}</span>
-                    {(project.integrador?.cpfCnpj || project.client?.cpfCnpj) && (
-                      <span className="text-[10px] text-muted-foreground">{project.integrador?.cpfCnpj || project.client?.cpfCnpj}</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 hidden md:table-cell">
-                    <span className="text-xs">{project.potencia ? `${project.potencia} kWp` : "—"}</span>
-                  </td>
-                  <td className="px-4 py-3 hidden lg:table-cell">
-                    <span className="text-xs truncate max-w-[140px] block">{project.concessionaria || "—"}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${getStatusBadge(project.status)}`}>
-                      {getStatusLabel(project.status)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                    <div className="flex items-center justify-end gap-1">
-                      {tab === "arquivados" ? (
-                        <>
-                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => unarchiveMut.mutate(project.id)} disabled={unarchiveMut.isPending} data-testid={`button-restore-project-${project.id}`}>
-                            <RotateCcw className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { if (confirm("Excluir permanentemente este projeto?")) deleteMut.mutate(project.id); }} disabled={deleteMut.isPending} data-testid={`button-delete-archived-${project.id}`}>
-                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setDetailProjectId(project.id)} data-testid={`button-view-project-${project.id}`}>
-                            <Eye className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { if (confirm("Excluir este projeto?")) deleteMut.mutate(project.id); }} disabled={deleteMut.isPending} data-testid={`button-delete-project-${project.id}`}>
-                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </td>
+        <Card className="border-border/40 shadow-sm overflow-hidden bg-background rounded-2xl">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-muted/30 border-b border-border/40">
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Projeto / ID</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hidden sm:table-cell">Integrador</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hidden md:table-cell">Potência</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hidden lg:table-cell">Concessionária</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Status</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground text-right">Ações</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-border/30">
+                {filtered.map(project => (
+                  <tr
+                    key={project.id}
+                    className="hover:bg-primary/[0.02] transition-colors cursor-pointer group"
+                    onClick={() => tab !== "arquivados" && setDetailProjectId(project.id)}
+                    data-testid={`row-project-${project.id}`}
+                  >
+                    <td className="px-6 py-5">
+                      <div className="flex flex-col gap-1 min-w-0">
+                        {project.ticketNumber && (
+                          <div className="flex items-center gap-1.5">
+                            <Hash className="h-3 w-3 text-primary/60" />
+                            <span className="text-[10px] font-mono font-bold text-primary/70 tracking-tighter uppercase">{project.ticketNumber}</span>
+                          </div>
+                        )}
+                        <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors truncate max-w-[250px]">{project.title}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5 hidden sm:table-cell">
+                      <div className="flex items-center gap-2">
+                        <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground">
+                          {((project as any).integrador?.name || project.client?.name || "U")[0]}
+                        </div>
+                        <span className="text-xs font-medium text-foreground/80">{(project as any).integrador?.name || project.client?.name || "—"}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5 hidden md:table-cell">
+                      {project.potencia ? (
+                        <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-foreground/70">
+                          <Zap className="h-3 w-3 text-amber-500" />
+                          <span>{project.potencia} <span className="text-[10px] text-muted-foreground">kWp</span></span>
+                        </div>
+                      ) : <span className="text-xs text-muted-foreground/40">—</span>}
+                    </td>
+                    <td className="px-6 py-5 hidden lg:table-cell">
+                      <span className="text-xs font-medium text-foreground/70">{project.concessionaria || "—"}</span>
+                    </td>
+                    <td className="px-6 py-5">
+                      <Badge className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 border-0 shadow-sm ${getStatusBadge(project.status)}`}>
+                        {getStatusLabel(project.status)}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-5 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        {tab === "arquivados" && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-lg hover:bg-emerald-500/10 hover:text-emerald-500"
+                            onClick={(e) => { e.stopPropagation(); unarchiveMut.mutate(project.id); }}
+                            disabled={unarchiveMut.isPending}
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map(project => (
-            <Card key={project.id} className={`hover-elevate cursor-pointer ${tab === "arquivados" ? "opacity-80" : ""}`} data-testid={`card-project-${project.id}`} onClick={() => tab !== "arquivados" && setDetailProjectId(project.id)}>
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
+            <Card
+              key={project.id}
+              className="group relative border-border/40 hover:border-primary/40 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden bg-background rounded-2xl"
+              onClick={() => tab !== "arquivados" && setDetailProjectId(project.id)}
+              data-testid={`card-project-${project.id}`}
+            >
+              <div className={`h-1.5 w-full ${getStatusBadge(project.status).split(" ")[1]}`} />
+              <CardContent className="p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="space-y-1">
                     {project.ticketNumber && (
-                      <p className="text-xs font-mono text-muted-foreground mb-1 flex items-center gap-1">
-                        <Hash className="h-3 w-3" />{project.ticketNumber}
-                      </p>
+                      <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-primary/5 border border-primary/10 w-fit">
+                        <Hash className="h-2.5 w-2.5 text-primary/60" />
+                        <span className="text-[9px] font-mono font-bold text-primary/70 tracking-tighter uppercase">{project.ticketNumber}</span>
+                      </div>
                     )}
-                    <CardTitle className="text-sm font-semibold leading-tight line-clamp-2">{project.title}</CardTitle>
+                    <h3 className="text-base font-bold text-foreground leading-tight group-hover:text-primary transition-colors line-clamp-2">{project.title}</h3>
                   </div>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap flex-shrink-0 ${getStatusBadge(project.status)}`}>
+                  <Badge className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 border-0 shadow-sm ${getStatusBadge(project.status)}`}>
                     {getStatusLabel(project.status)}
+                  </Badge>
+                </div>
+
+                <div className="space-y-3 pt-2 border-t border-border/30">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-muted-foreground font-semibold uppercase tracking-tight">Integrador</span>
+                    <span className="font-bold text-foreground/80 truncate max-w-[140px]">{(project as any).integrador?.name || project.client?.name || "—"}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-muted-foreground font-semibold uppercase tracking-tight">Potência</span>
+                    <div className="flex items-center gap-1.5 font-bold text-foreground/80">
+                      <Zap className="h-3 w-3 text-amber-500" />
+                      <span>{project.potencia || "0"} kWp</span>
+                    </div>
+                  </div>
+                  {project.valor && (
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-muted-foreground font-semibold uppercase tracking-tight">Investimento</span>
+                      <span className="font-black text-primary/80">R$ {project.valor}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-6 flex items-center justify-between pt-4 border-t border-border/30">
+                  <span className="text-[10px] text-muted-foreground font-mono">
+                    {project.createdAt ? new Date(project.createdAt).toLocaleDateString("pt-BR") : "—"}
                   </span>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">Integrador</p>
-                  <p className="text-sm font-medium truncate">{project.integrador?.name || project.client?.name || "—"}</p>
-                  {(project.integrador?.cpfCnpj || project.client?.cpfCnpj) && (
-                    <p className="text-xs text-muted-foreground truncate">{project.integrador?.cpfCnpj || project.client?.cpfCnpj}</p>
-                  )}
-                  {project.nomeCliente && (
-                    <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
-                      <User className="h-3 w-3" /> Cliente: {project.nomeCliente}
-                    </p>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  {(project.marcaInversor || project.modeloInversor) && (
-                    <div>
-                      <p className="text-muted-foreground flex items-center gap-1"><Cpu className="h-3 w-3" /> Inversor</p>
-                      <p className="font-medium truncate">{project.marcaInversor} {project.modeloInversor}</p>
-                    </div>
-                  )}
-                  {(project.marcaPainel || project.quantidadePaineis) && (
-                    <div>
-                      <p className="text-muted-foreground flex items-center gap-1"><Sun className="h-3 w-3" /> Painéis</p>
-                      <p className="font-medium">{project.quantidadePaineis && `${project.quantidadePaineis}x `}{project.marcaPainel}</p>
-                    </div>
-                  )}
-                  {project.potencia && (
-                    <div>
-                      <p className="text-muted-foreground">Potência</p>
-                      <p className="font-medium">{project.potencia} kWp</p>
-                    </div>
-                  )}
-                  {project.concessionaria && (
-                    <div>
-                      <p className="text-muted-foreground">Concessionária</p>
-                      <p className="font-medium truncate">{project.concessionaria}</p>
-                    </div>
-                  )}
-                  {project.amperagemDisjuntor && (
-                    <div>
-                      <p className="text-muted-foreground">Disjuntor</p>
-                      <p className="font-medium">{project.amperagemDisjuntor}</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex gap-2 pt-1" onClick={e => e.stopPropagation()}>
-                  {tab === "arquivados" ? (
-                    <>
+                  <div className="flex gap-2">
+                    {tab === "arquivados" && (
                       <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex-1"
-                        onClick={() => unarchiveMut.mutate(project.id)}
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 rounded-lg hover:bg-emerald-500/10 hover:text-emerald-500"
+                        onClick={(e) => { e.stopPropagation(); unarchiveMut.mutate(project.id); }}
                         disabled={unarchiveMut.isPending}
-                        data-testid={`button-restore-project-${project.id}`}
                       >
-                        <RotateCcw className="h-3 w-3 mr-1" /> Restaurar
+                        <RotateCcw className="h-4 w-4" />
                       </Button>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-8 w-8"
-                        onClick={() => {
-                          if (confirm("Excluir permanentemente este projeto?")) deleteMut.mutate(project.id);
-                        }}
-                        disabled={deleteMut.isPending}
-                        data-testid={`button-delete-archived-${project.id}`}
-                      >
-                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex-1"
-                        onClick={() => setDetailProjectId(project.id)}
-                        data-testid={`button-view-project-${project.id}`}
-                      >
-                        <Eye className="h-3 w-3 mr-1" /> Ver Detalhes
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-8 w-8"
-                        onClick={() => {
-                          if (confirm("Excluir este projeto?")) deleteMut.mutate(project.id);
-                        }}
-                        disabled={deleteMut.isPending}
-                        data-testid={`button-delete-project-${project.id}`}
-                      >
-                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                      </Button>
-                    </>
-                  )}
+                    )}
+                    <Button size="sm" variant="outline" className="text-[10px] font-bold uppercase tracking-widest px-4 h-8 rounded-lg border-border/60 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all">
+                      Gerenciar
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -1003,7 +1077,7 @@ export default function ProjectsPage() {
 
       <ProjectDetailSheet
         project={detailProject}
-        open={!!detailProject}
+        open={!!detailProjectId}
         onClose={() => setDetailProjectId(null)}
       />
     </div>

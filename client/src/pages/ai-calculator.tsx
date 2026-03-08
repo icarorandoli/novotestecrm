@@ -49,49 +49,57 @@ export default function AiCalculator() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-          <Calculator className="w-5 h-5 text-orange-600" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Calculadora Solar</h1>
-          <p className="text-sm text-muted-foreground">Dimensione o sistema fotovoltaico ideal pelo consumo</p>
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shadow-sm">
+            <Calculator className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">Calculadora Solar</h1>
+            <p className="text-muted-foreground">Dimensione o sistema fotovoltaico ideal pelo consumo</p>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Dados de Consumo</CardTitle>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <Card className="lg:col-span-5 shadow-sm border-border/50">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <Zap className="w-4 h-4 text-primary" />
+              Dados de Consumo
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
+              <form onSubmit={form.handleSubmit((d) => mutation.mutate(d))} className="space-y-6">
                 <FormField control={form.control} name="monthlyConsumptionKwh" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Consumo Médio Mensal (kWh)</FormLabel>
+                    <FormLabel className="text-sm font-medium">Consumo Médio Mensal (kWh)</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="400" {...field} data-testid="input-consumption" />
+                      <div className="relative">
+                        <Input type="number" placeholder="400" {...field} data-testid="input-consumption" className="pl-9 h-11" />
+                        <Sun className="w-4 h-4 absolute left-3 top-3.5 text-muted-foreground" />
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-4">
                   <FormField control={form.control} name="city" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Cidade</FormLabel>
+                      <FormLabel className="text-sm font-medium">Cidade</FormLabel>
                       <FormControl>
-                        <Input placeholder="São Paulo" {...field} data-testid="input-city" />
+                        <Input placeholder="São Paulo" {...field} data-testid="input-city" className="h-11" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                   <FormField control={form.control} name="state" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Estado</FormLabel>
+                      <FormLabel className="text-sm font-medium">Estado</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
-                          <SelectTrigger data-testid="select-state">
+                          <SelectTrigger data-testid="select-state" className="h-11">
                             <SelectValue />
                           </SelectTrigger>
                         </FormControl>
@@ -103,7 +111,7 @@ export default function AiCalculator() {
                     </FormItem>
                   )} />
                 </div>
-                <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-700" disabled={mutation.isPending} data-testid="button-calculate">
+                <Button type="submit" className="w-full h-11 text-base font-semibold transition-all hover-elevate active-elevate-2" disabled={mutation.isPending} data-testid="button-calculate">
                   {mutation.isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Calculando...</> : <><Calculator className="w-4 h-4 mr-2" />Calcular Sistema</>}
                 </Button>
               </form>
@@ -111,77 +119,119 @@ export default function AiCalculator() {
           </CardContent>
         </Card>
 
-        {result && (
-          <Card className="border-orange-200 dark:border-orange-800">
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Sun className="w-4 h-4 text-orange-500" />
-                Resultado do Dimensionamento
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3 text-center" data-testid="result-kwp">
-                  <div className="text-2xl font-bold text-orange-600">{result.kwp} kWp</div>
-                  <div className="text-xs text-muted-foreground">Potência do sistema</div>
-                </div>
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-center" data-testid="result-panels">
-                  <div className="text-2xl font-bold text-blue-600">{result.panelsNeeded}</div>
-                  <div className="text-xs text-muted-foreground">Módulos necessários</div>
-                </div>
-                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 text-center" data-testid="result-monthly-gen">
-                  <div className="text-2xl font-bold text-green-600">{result.monthlyGenerationKwh.toLocaleString("pt-BR")}</div>
-                  <div className="text-xs text-muted-foreground">kWh/mês estimado</div>
-                </div>
-                <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-purple-600">{result.coveragePercent}%</div>
-                  <div className="text-xs text-muted-foreground">Cobertura do consumo</div>
-                </div>
+        <div className="lg:col-span-7 space-y-6">
+          {result ? (
+            <Card className="border-primary/20 bg-gradient-to-br from-card to-primary/5 shadow-md overflow-visible relative">
+              <div className="absolute -top-3 -right-3">
+                <Badge className="bg-primary text-primary-foreground px-3 py-1 text-xs font-bold shadow-lg">RECOMENDADO</Badge>
               </div>
-              <Separator />
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Irradiação local</span>
-                  <span className="font-medium">{result.irradiationUsed} kWh/m²/dia</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Fase</span>
-                  <Badge variant="outline" className="text-xs">{result.phase}</Badge>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Geração anual</span>
-                  <span className="font-medium">{result.annualGenerationKwh.toLocaleString("pt-BR")} kWh</span>
-                </div>
-              </div>
-              {(result.suggestedPanel || result.suggestedInverter) && (
-                <>
-                  <Separator />
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Equipamentos sugeridos</p>
-                    {result.suggestedPanel && (
-                      <div className="flex items-start gap-2 text-sm" data-testid="result-panel">
-                        <Zap className="w-4 h-4 text-yellow-500 mt-0.5 shrink-0" />
-                        <div>
-                          <div className="font-medium">{result.suggestedPanel.brand} {result.suggestedPanel.model}</div>
-                          <div className="text-muted-foreground text-xs">{result.suggestedPanel.powerW}Wp por módulo</div>
-                        </div>
-                      </div>
-                    )}
-                    {result.suggestedInverter && (
-                      <div className="flex items-start gap-2 text-sm" data-testid="result-inverter">
-                        <Battery className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
-                        <div>
-                          <div className="font-medium">{result.suggestedInverter.brand} {result.suggestedInverter.model}</div>
-                          <div className="text-muted-foreground text-xs">{result.suggestedInverter.powerKw} kW</div>
-                        </div>
-                      </div>
-                    )}
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-primary" />
+                  Dimensionamento Técnico
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-background/60 backdrop-blur-sm border border-border/50 rounded-xl p-4 shadow-sm hover-elevate transition-all" data-testid="result-kwp">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Zap className="w-4 h-4 text-primary" />
+                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Potência Total</span>
+                    </div>
+                    <div className="text-3xl font-bold text-foreground tracking-tight">
+                      {result.kwp}<span className="text-sm font-medium ml-1 text-muted-foreground">kWp</span>
+                    </div>
                   </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        )}
+                  <div className="bg-background/60 backdrop-blur-sm border border-border/50 rounded-xl p-4 shadow-sm hover-elevate transition-all" data-testid="result-panels">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Sun className="w-4 h-4 text-orange-500" />
+                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Módulos</span>
+                    </div>
+                    <div className="text-3xl font-bold text-foreground tracking-tight">
+                      {result.panelsNeeded}<span className="text-sm font-medium ml-1 text-muted-foreground">unid.</span>
+                    </div>
+                  </div>
+                  <div className="bg-background/60 backdrop-blur-sm border border-border/50 rounded-xl p-4 shadow-sm hover-elevate transition-all" data-testid="result-monthly-gen">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Zap className="w-4 h-4 text-green-500" />
+                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Geração Mensal</span>
+                    </div>
+                    <div className="text-3xl font-bold text-foreground tracking-tight">
+                      {result.monthlyGenerationKwh.toLocaleString("pt-BR")}<span className="text-sm font-medium ml-1 text-muted-foreground">kWh</span>
+                    </div>
+                  </div>
+                  <div className="bg-background/60 backdrop-blur-sm border border-border/50 rounded-xl p-4 shadow-sm hover-elevate transition-all">
+                    <div className="flex items-center gap-2 mb-1">
+                      <TrendingUp className="w-4 h-4 text-blue-500" />
+                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Economia</span>
+                    </div>
+                    <div className="text-3xl font-bold text-foreground tracking-tight">
+                      {result.coveragePercent}<span className="text-sm font-medium ml-1 text-muted-foreground">%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                  <div className="space-y-3">
+                    <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1">Especificações do Local</h4>
+                    <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Irradiação</span>
+                        <span className="font-semibold text-foreground">{result.irradiationUsed} <span className="text-[10px] text-muted-foreground">kWh/m²/dia</span></span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Padrão</span>
+                        <Badge variant="secondary" className="text-[10px] h-5 uppercase font-bold">{result.phase}</Badge>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Geração Anual</span>
+                        <span className="font-semibold text-foreground">{result.annualGenerationKwh.toLocaleString("pt-BR")} <span className="text-[10px] text-muted-foreground">kWh</span></span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {(result.suggestedPanel || result.suggestedInverter) && (
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1">Equipamentos Sugeridos</h4>
+                      <div className="space-y-2">
+                        {result.suggestedPanel && (
+                          <div className="flex items-center gap-3 bg-background/40 p-2.5 rounded-lg border border-border/30" data-testid="result-panel">
+                            <div className="w-8 h-8 rounded-md bg-orange-500/10 flex items-center justify-center shrink-0">
+                              <Sun className="w-4 h-4 text-orange-600" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-xs font-bold text-foreground truncate">{result.suggestedPanel.brand}</div>
+                              <div className="text-[10px] text-muted-foreground truncate">{result.suggestedPanel.model} • {result.suggestedPanel.powerW}Wp</div>
+                            </div>
+                          </div>
+                        )}
+                        {result.suggestedInverter && (
+                          <div className="flex items-center gap-3 bg-background/40 p-2.5 rounded-lg border border-border/30" data-testid="result-inverter">
+                            <div className="w-8 h-8 rounded-md bg-blue-500/10 flex items-center justify-center shrink-0">
+                              <Battery className="w-4 h-4 text-blue-600" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-xs font-bold text-foreground truncate">{result.suggestedInverter.brand}</div>
+                              <div className="text-[10px] text-muted-foreground truncate">{result.suggestedInverter.model} • {result.suggestedInverter.powerKw}kW</div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center text-center p-8 border-2 border-dashed border-muted rounded-2xl bg-muted/5">
+              <div className="w-16 h-16 rounded-full bg-muted/20 flex items-center justify-center mb-4">
+                <Sun className="w-8 h-8 text-muted-foreground/40" />
+              </div>
+              <h3 className="text-lg font-medium text-foreground mb-1">Aguardando Dimensionamento</h3>
+              <p className="text-sm text-muted-foreground max-w-[280px]">Preencha os dados de consumo ao lado para gerar a configuração técnica do sistema.</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

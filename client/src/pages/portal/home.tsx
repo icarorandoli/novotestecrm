@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, FolderOpen, ShieldCheck, Clock, Zap, ChevronRight, FileText } from "lucide-react";
+import { Plus, FolderOpen, ShieldCheck, Clock, Zap, ChevronRight, FileText, Building } from "lucide-react";
 import type { Project, Client } from "@shared/schema";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -57,161 +57,192 @@ export default function PortalHomePage() {
   const homologados = projects.filter(p => p.status === "homologado").length;
 
   return (
-    <div className="px-4 py-5 md:p-6 space-y-4 md:space-y-6 max-w-5xl mx-auto">
-      {/* Welcome */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold" data-testid="text-portal-welcome">
-            Olá, {user?.name?.split(" ")[0]}!
-          </h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Acompanhe seus projetos de homologação</p>
-        </div>
-        <Button asChild className="hidden md:flex" data-testid="button-new-project-portal">
-          <Link href="/portal/novo-projeto">
-            <Plus className="h-4 w-4 mr-2" /> Solicitar Projeto
-          </Link>
-        </Button>
-      </div>
-
-      {/* Mobile quick action */}
-      <Link href="/portal/novo-projeto" className="md:hidden block">
-        <div className="flex items-center gap-3 p-4 rounded-xl bg-primary text-primary-foreground shadow-md active:scale-[0.98] transition-transform" data-testid="button-mobile-quick-new">
-          <div className="h-9 w-9 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-            <Plus className="h-5 w-5" />
+    <div className="px-4 py-8 md:p-10 space-y-10 max-w-6xl mx-auto">
+      {/* Welcome Section */}
+      <div className="relative overflow-hidden rounded-3xl bg-primary p-8 md:p-12 text-primary-foreground shadow-2xl shadow-primary/20">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-sky-400/20 rounded-full -ml-10 -mb-10 blur-2xl" />
+        
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+          <div className="space-y-4">
+            <Badge variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20 px-3 py-1">
+              Portal do Integrador
+            </Badge>
+            <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight" data-testid="text-portal-welcome">
+              Bem-vindo, {user?.name?.split(" ")[0]}!
+            </h1>
+            <p className="text-sky-100/80 text-lg font-medium max-w-md">
+              Acompanhe o status de suas homologações e gerencie seus projetos com facilidade.
+            </p>
           </div>
-          <div>
-            <p className="font-semibold text-sm">Solicitar Novo Projeto</p>
-            <p className="text-xs opacity-80">Toque para começar</p>
-          </div>
-          <ChevronRight className="h-4 w-4 ml-auto opacity-70" />
-        </div>
-      </Link>
-
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 md:gap-4">
-        <Card className="hover-elevate">
-          <CardContent className="p-3 md:p-4 flex flex-col md:flex-row items-center md:items-center gap-1 md:gap-3 text-center md:text-left">
-            <div className="h-8 w-8 md:h-10 md:w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <FolderOpen className="h-4 w-4 md:h-5 md:w-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-xl md:text-2xl font-bold" data-testid="text-portal-total">{projects.length}</p>
-              <p className="text-[10px] md:text-xs text-muted-foreground leading-tight">Total</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="hover-elevate">
-          <CardContent className="p-3 md:p-4 flex flex-col md:flex-row items-center md:items-center gap-1 md:gap-3 text-center md:text-left">
-            <div className="h-8 w-8 md:h-10 md:w-10 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
-              <Clock className="h-4 w-4 md:h-5 md:w-5 text-amber-500" />
-            </div>
-            <div>
-              <p className="text-xl md:text-2xl font-bold text-amber-600 dark:text-amber-400" data-testid="text-portal-active">{active}</p>
-              <p className="text-[10px] md:text-xs text-muted-foreground leading-tight">Andamento</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="hover-elevate">
-          <CardContent className="p-3 md:p-4 flex flex-col md:flex-row items-center md:items-center gap-1 md:gap-3 text-center md:text-left">
-            <div className="h-8 w-8 md:h-10 md:w-10 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0">
-              <ShieldCheck className="h-4 w-4 md:h-5 md:w-5 text-green-500" />
-            </div>
-            <div>
-              <p className="text-xl md:text-2xl font-bold text-green-600 dark:text-green-400" data-testid="text-portal-homologados">{homologados}</p>
-              <p className="text-[10px] md:text-xs text-muted-foreground leading-tight">Homologados</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Projects list */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-2 pb-3">
-          <div>
-            <CardTitle className="text-base">Meus Projetos</CardTitle>
-            {projects.length > 5 && (
-              <p className="text-xs text-muted-foreground mt-0.5">Mostrando 5 de {projects.length}</p>
-            )}
-          </div>
-          <Button variant="outline" size="sm" asChild data-testid="link-all-projects" className="gap-1">
-            <Link href="/portal/projetos">Ver todos ({projects.length}) <ChevronRight className="h-3.5 w-3.5" /></Link>
+          
+          <Button asChild size="lg" className="bg-white text-primary hover:bg-sky-50 shadow-xl active:scale-[0.98] transition-all font-bold px-8 h-14" data-testid="button-new-project-portal">
+            <Link href="/portal/novo-projeto">
+              <Plus className="h-5 w-5 mr-2" /> Solicitar Novo Projeto
+            </Link>
           </Button>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-3">
-              {Array(3).fill(0).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
+        </div>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        {[
+          { label: "Total de Projetos", value: projects.length, icon: FolderOpen, color: "text-primary", bg: "bg-primary/10", testId: "text-portal-total" },
+          { label: "Em Andamento", value: active, icon: Clock, color: "text-amber-500", bg: "bg-amber-500/10", testId: "text-portal-active" },
+          { label: "Homologados", value: homologados, icon: ShieldCheck, color: "text-emerald-500", bg: "bg-emerald-500/10", testId: "text-portal-homologados" }
+        ].map((stat, i) => (
+          <Card key={i} className="border-border/40 hover-elevate group overflow-hidden shadow-sm">
+            <CardContent className="p-8 relative">
+              <div className={`absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform duration-500`}>
+                <stat.icon className="h-24 w-24" />
+              </div>
+              <div className="flex items-center gap-4 mb-4">
+                <div className={`h-12 w-12 rounded-2xl ${stat.bg} flex items-center justify-center transition-transform group-hover:rotate-12`}>
+                  <stat.icon className={`h-6 w-6 ${stat.color}`} />
+                </div>
+                <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">{stat.label}</p>
+              </div>
+              <p className="text-5xl font-black tracking-tight" data-testid={stat.testId}>{stat.value}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Projects list */}
+        <Card className="lg:col-span-2 border-border/40 shadow-xl shadow-black/5 overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between gap-4 border-b border-border/40 bg-muted/30 px-8 py-6">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Zap className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-xl font-bold">Projetos Recentes</CardTitle>
+                <p className="text-xs text-muted-foreground font-medium mt-0.5">Últimas atualizações do seu portal</p>
+              </div>
             </div>
-          ) : projects.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-              <FolderOpen className="h-12 w-12 mb-3 opacity-30" />
-              <p className="font-medium">Você ainda não tem projetos</p>
-              <p className="text-sm mt-1">Solicite seu primeiro projeto de homologação</p>
-              <Button asChild className="mt-4" size="sm">
-                <Link href="/portal/novo-projeto">
-                  <Plus className="h-3.5 w-3.5 mr-1.5" /> Solicitar Projeto
-                </Link>
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {projects.slice(0, 5).map(project => (
-                <Link key={project.id} href={`/portal/projetos/${project.id}`}>
-                  <div className="flex items-center gap-3 p-3 rounded-lg border border-border/60 bg-card cursor-pointer hover-elevate" data-testid={`card-portal-project-${project.id}`}>
-                    <div className="h-3 w-3 rounded-full flex-shrink-0" style={{ backgroundColor: STATUS_COLORS[project.status] }} />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 mb-0.5">
-                        {(project as any).ticketNumber && (
-                          <span className="text-xs font-mono text-primary font-semibold">{(project as any).ticketNumber}</span>
-                        )}
-                        <p className="text-sm font-medium truncate">{project.title}</p>
+            <Button variant="ghost" size="sm" asChild data-testid="link-all-projects" className="font-bold text-primary hover:text-primary hover:bg-primary/5">
+              <Link href="/portal/projetos">Ver todos <ChevronRight className="h-4 w-4 ml-1" /></Link>
+            </Button>
+          </CardHeader>
+          <CardContent className="p-0">
+            {isLoading ? (
+              <div className="p-8 space-y-4">
+                {Array(3).fill(0).map((_, i) => <Skeleton key={i} className="h-20 w-full rounded-2xl" />)}
+              </div>
+            ) : projects.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+                <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center mb-6">
+                  <FolderOpen className="h-10 w-10 opacity-20" />
+                </div>
+                <p className="font-bold text-lg">Nenhum projeto encontrado</p>
+                <p className="text-sm mt-1 mb-8">Comece solicitando seu primeiro projeto.</p>
+                <Button asChild size="sm" className="font-bold">
+                  <Link href="/portal/novo-projeto">
+                    <Plus className="h-4 w-4 mr-2" /> Criar Projeto
+                  </Link>
+                </Button>
+              </div>
+            ) : (
+              <div className="divide-y divide-border/40">
+                {projects.slice(0, 5).map(project => (
+                  <Link key={project.id} href={`/portal/projetos/${project.id}`}>
+                    <div className="group flex items-center gap-6 p-6 hover:bg-muted/50 cursor-pointer transition-all" data-testid={`card-portal-project-${project.id}`}>
+                      <div className="relative">
+                        <div className="h-14 w-14 rounded-2xl bg-muted flex items-center justify-center group-hover:scale-105 transition-transform overflow-hidden">
+                          <Zap className="h-6 w-6 text-primary/40 group-hover:text-primary transition-colors" />
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-4 border-background" style={{ backgroundColor: STATUS_COLORS[project.status] }} />
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        {project.potencia ? `${project.potencia} kWp` : ""}
-                        {project.concessionaria ? ` · ${project.concessionaria}` : ""}
-                        {project.numeroProtocolo ? ` · Prot. ${project.numeroProtocolo}` : ""}
-                      </p>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          {(project as any).ticketNumber && (
+                            <Badge variant="secondary" className="font-mono text-[10px] py-0 h-5 px-1.5 border-primary/20 bg-primary/5 text-primary">
+                              {(project as any).ticketNumber}
+                            </Badge>
+                          )}
+                          <p className="font-bold truncate text-foreground group-hover:text-primary transition-colors">{project.title}</p>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground">
+                          {project.potencia && (
+                            <span className="flex items-center gap-1">
+                              <Zap className="h-3 w-3" /> {project.potencia} kWp
+                            </span>
+                          )}
+                          {project.concessionaria && (
+                            <span className="flex items-center gap-1">
+                              <Building className="h-3 w-3" /> {project.concessionaria}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-4">
+                        <div className={`hidden sm:flex px-3 py-1.5 rounded-xl font-bold text-[10px] uppercase tracking-wider ${STATUS_BADGE_STYLES[project.status]}`}>
+                          {STATUS_LABELS[project.status]}
+                        </div>
+                        <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE_STYLES[project.status]}`}>
-                        {STATUS_LABELS[project.status]}
-                      </span>
-                      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Info Column */}
+        <div className="space-y-8">
+          {/* Quick Help */}
+          <Card className="border-primary/20 bg-primary/5 shadow-none overflow-hidden relative">
+            <div className="absolute top-0 right-0 p-8 opacity-10">
+              <ShieldCheck className="h-32 w-32" />
+            </div>
+            <CardHeader className="pb-2 relative z-10">
+              <CardTitle className="text-lg font-bold">Suporte Premium</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 relative z-10">
+              <p className="text-sm text-muted-foreground font-medium leading-relaxed">
+                Nossa equipe de engenharia está pronta para auxiliar você em qualquer etapa.
+              </p>
+              <Button className="w-full font-bold shadow-lg shadow-primary/20" asChild>
+                <a href="https://wa.me/seunumerowhatsapp" target="_blank" rel="noopener noreferrer">
+                  Falar com Engenheiro
+                </a>
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Steps */}
+          <Card className="border-border/40 shadow-xl shadow-black/5">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-bold">Fluxo de Trabalho</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="space-y-0">
+                {[
+                  { num: "01", title: "Documentação", desc: "Envio inicial de dados e docs", icon: FileText, color: "text-sky-500" },
+                  { num: "02", title: "Projeto Técnico", desc: "Elaboração pela nossa engenharia", icon: Zap, color: "text-amber-500" },
+                  { num: "03", title: "Protocolo", desc: "Submissão à concessionária", icon: FolderOpen, color: "text-purple-500" },
+                  { num: "04", title: "Conclusão", desc: "Homologação final concluída", icon: ShieldCheck, color: "text-emerald-500" },
+                ].map((step, idx) => (
+                  <div key={idx} className="flex gap-4 p-5 hover:bg-muted/30 transition-colors border-b last:border-0 border-border/40">
+                    <div className="h-10 w-10 rounded-xl bg-background border border-border/60 flex items-center justify-center font-bold text-xs shrink-0 shadow-sm">
+                      {step.num}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold">{step.title}</p>
+                      <p className="text-xs text-muted-foreground font-medium">{step.desc}</p>
                     </div>
                   </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Process steps */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Como funciona o processo de homologação?</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { num: "01", title: "Envio de Documentos", desc: "Você envia os documentos necessários pelo portal", icon: FileText },
-              { num: "02", title: "Projeto Técnico", desc: "Nossa equipe elabora o projeto elétrico e memória de cálculo", icon: Zap },
-              { num: "03", title: "Protocolo", desc: "Protocolamos junto à concessionária de energia", icon: FolderOpen },
-              { num: "04", title: "Homologação", desc: "Após aprovação e vistoria, o sistema é homologado", icon: ShieldCheck },
-            ].map(step => (
-              <div key={step.num} className="flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-primary">{step.num}</span>
-                  <div className="h-px flex-1 bg-border" />
-                </div>
-                <step.icon className="h-5 w-5 text-primary" />
-                <p className="text-sm font-medium">{step.title}</p>
-                <p className="text-xs text-muted-foreground leading-relaxed">{step.desc}</p>
+                ))}
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

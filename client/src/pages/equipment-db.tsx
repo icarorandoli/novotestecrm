@@ -107,91 +107,183 @@ export default function EquipmentDb() {
   const inverters = (data?.inverters ?? []).filter(i => !search || `${i.brand} ${i.model}`.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-6 max-w-6xl mx-auto space-y-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-            <Database className="w-5 h-5 text-blue-600" />
+          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shadow-sm">
+            <Database className="w-6 h-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Banco de Equipamentos</h1>
-            <p className="text-sm text-muted-foreground">Módulos fotovoltaicos e inversores cadastrados</p>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">Banco de Equipamentos</h1>
+            <p className="text-muted-foreground">Módulos fotovoltaicos e inversores homologados</p>
           </div>
         </div>
-        <div className="relative w-64">
-          <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Buscar equipamento..." className="pl-8" value={search} onChange={e => setSearch(e.target.value)} data-testid="input-equipment-search" />
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+            <Input 
+              placeholder="Buscar equipamento..." 
+              className="pl-9 h-10 shadow-sm transition-all focus:ring-primary/20" 
+              value={search} 
+              onChange={e => setSearch(e.target.value)} 
+              data-testid="input-equipment-search" 
+            />
+          </div>
+          {isAdmin && (
+            <div className="flex gap-2">
+              <Button onClick={() => setPanelDialog({ open: true })} className="shadow-sm hover-elevate" data-testid="button-add-panel">
+                <Plus className="w-4 h-4 mr-2" /> Módulo
+              </Button>
+              <Button variant="outline" onClick={() => setInverterDialog({ open: true })} className="shadow-sm hover-elevate" data-testid="button-add-inverter">
+                <Plus className="w-4 h-4 mr-2" /> Inversor
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
-      <Tabs defaultValue="panels">
-        <TabsList>
-          <TabsTrigger value="panels" data-testid="tab-panels"><Zap className="w-4 h-4 mr-1" />Módulos ({panels.length})</TabsTrigger>
-          <TabsTrigger value="inverters" data-testid="tab-inverters"><Battery className="w-4 h-4 mr-1" />Inversores ({inverters.length})</TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="panels" className="w-full">
+        <div className="border-b mb-6">
+          <TabsList className="bg-transparent h-auto p-0 gap-8">
+            <TabsTrigger 
+              value="panels" 
+              data-testid="tab-panels"
+              className="px-1 py-3 bg-transparent border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none transition-all hover:text-primary"
+            >
+              <Zap className="w-4 h-4 mr-2" />
+              Módulos
+              <Badge variant="secondary" className="ml-2 h-5 px-1.5 font-mono text-[10px]">{panels.length}</Badge>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="inverters" 
+              data-testid="tab-inverters"
+              className="px-1 py-3 bg-transparent border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none transition-all hover:text-primary"
+            >
+              <Battery className="w-4 h-4 mr-2" />
+              Inversores
+              <Badge variant="secondary" className="ml-2 h-5 px-1.5 font-mono text-[10px]">{inverters.length}</Badge>
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
-        <TabsContent value="panels" className="mt-4">
-          <div className="flex justify-end mb-3">
-            {isAdmin && <Button size="sm" onClick={() => setPanelDialog({ open: true })} data-testid="button-add-panel"><Plus className="w-4 h-4 mr-1" />Adicionar Módulo</Button>}
-          </div>
-          {isLoading ? <p className="text-center text-muted-foreground py-8">Carregando...</p> : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <TabsContent value="panels" className="mt-0 outline-none">
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1,2,3,4,5,6].map(i => <div key={i} className="h-48 rounded-xl bg-muted/20 animate-pulse border border-border/50" />)}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {panels.map(p => (
-                <Card key={p.id} data-testid={`card-panel-${p.id}`} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <div className="font-semibold text-sm">{p.brand}</div>
-                        <div className="text-xs text-muted-foreground">{p.model}</div>
+                <Card key={p.id} data-testid={`card-panel-${p.id}`} className="group hover:shadow-lg transition-all border-border/50 overflow-hidden">
+                  <div className="h-1 bg-gradient-to-r from-orange-500 to-yellow-500 opacity-70" />
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="min-w-0">
+                        <div className="font-bold text-lg text-foreground truncate">{p.brand}</div>
+                        <div className="text-sm text-muted-foreground truncate">{p.model}</div>
                       </div>
-                      <Badge variant="secondary" className="text-xs">{p.powerW}Wp</Badge>
+                      <Badge variant="secondary" className="bg-orange-500/10 text-orange-600 border-orange-500/20 px-2 py-0.5 font-bold">
+                        {p.powerW}Wp
+                      </Badge>
                     </div>
-                    <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground mb-3">
-                      <span>Eficiência: <strong className="text-foreground">{p.efficiencyPct}%</strong></span>
-                      {p.voltageVoc && <span>Voc: <strong className="text-foreground">{p.voltageVoc}V</strong></span>}
-                    </div>
-                    {isAdmin && (
-                      <div className="flex gap-2 justify-end">
-                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setPanelDialog({ open: true, item: p })}><Pencil className="w-3 h-3" /></Button>
-                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => delPanel.mutate(p.id)}><Trash2 className="w-3 h-3" /></Button>
+                    
+                    <div className="grid grid-cols-2 gap-4 mb-6">
+                      <div className="bg-muted/30 p-2.5 rounded-lg border border-border/30">
+                        <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">Eficiência</div>
+                        <div className="text-sm font-semibold">{p.efficiencyPct}%</div>
                       </div>
-                    )}
+                      <div className="bg-muted/30 p-2.5 rounded-lg border border-border/30">
+                        <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">Voc (V)</div>
+                        <div className="text-sm font-semibold">{p.voltageVoc ?? "-"} V</div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between border-t pt-4">
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                        <div className="w-2 h-2 rounded-full bg-green-500" />
+                        Ativo
+                      </div>
+                      {isAdmin && (
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button size="icon" variant="ghost" className="h-8 w-8 hover-elevate" onClick={() => setPanelDialog({ open: true, item: p })}>
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive hover-elevate" onClick={() => delPanel.mutate(p.id)}>
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               ))}
+              {panels.length === 0 && (
+                <div className="col-span-full py-20 text-center border-2 border-dashed rounded-2xl bg-muted/5">
+                  <Search className="w-12 h-12 mx-auto text-muted-foreground/30 mb-4" />
+                  <p className="text-muted-foreground font-medium">Nenhum módulo encontrado</p>
+                </div>
+              )}
             </div>
           )}
         </TabsContent>
 
-        <TabsContent value="inverters" className="mt-4">
-          <div className="flex justify-end mb-3">
-            {isAdmin && <Button size="sm" onClick={() => setInverterDialog({ open: true })} data-testid="button-add-inverter"><Plus className="w-4 h-4 mr-1" />Adicionar Inversor</Button>}
-          </div>
-          {isLoading ? <p className="text-center text-muted-foreground py-8">Carregando...</p> : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <TabsContent value="inverters" className="mt-0 outline-none">
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1,2,3].map(i => <div key={i} className="h-48 rounded-xl bg-muted/20 animate-pulse border border-border/50" />)}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {inverters.map(i => (
-                <Card key={i.id} data-testid={`card-inverter-${i.id}`} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <div className="font-semibold text-sm">{i.brand}</div>
-                        <div className="text-xs text-muted-foreground">{i.model}</div>
+                <Card key={i.id} data-testid={`card-inverter-${i.id}`} className="group hover:shadow-lg transition-all border-border/50 overflow-hidden">
+                  <div className="h-1 bg-gradient-to-r from-blue-500 to-cyan-500 opacity-70" />
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="min-w-0">
+                        <div className="font-bold text-lg text-foreground truncate">{i.brand}</div>
+                        <div className="text-sm text-muted-foreground truncate">{i.model}</div>
                       </div>
-                      <Badge variant="secondary" className="text-xs">{i.powerKw} kW</Badge>
+                      <Badge variant="secondary" className="bg-blue-500/10 text-blue-600 border-blue-500/20 px-2 py-0.5 font-bold">
+                        {i.powerKw}kW
+                      </Badge>
                     </div>
-                    <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground mb-3">
-                      <span>Fases: <strong className="text-foreground">{i.phases === 1 ? "Mono" : i.phases === 2 ? "Bi" : "Tri"}</strong></span>
-                      <span>MPPT: <strong className="text-foreground">{i.mpptCount}</strong></span>
-                    </div>
-                    {isAdmin && (
-                      <div className="flex gap-2 justify-end">
-                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setInverterDialog({ open: true, item: i })}><Pencil className="w-3 h-3" /></Button>
-                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => delInv.mutate(i.id)}><Trash2 className="w-3 h-3" /></Button>
+                    
+                    <div className="grid grid-cols-2 gap-4 mb-6">
+                      <div className="bg-muted/30 p-2.5 rounded-lg border border-border/30">
+                        <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">Fases</div>
+                        <div className="text-sm font-semibold">{i.phases === 1 ? "Monofásico" : i.phases === 2 ? "Bifásico" : "Trifásico"}</div>
                       </div>
-                    )}
+                      <div className="bg-muted/30 p-2.5 rounded-lg border border-border/30">
+                        <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">Qtd MPPT</div>
+                        <div className="text-sm font-semibold">{i.mpptCount}</div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between border-t pt-4">
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                        <div className="w-2 h-2 rounded-full bg-green-500" />
+                        Ativo
+                      </div>
+                      {isAdmin && (
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button size="icon" variant="ghost" className="h-8 w-8 hover-elevate" onClick={() => setInverterDialog({ open: true, item: i })}>
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive hover-elevate" onClick={() => delInv.mutate(i.id)}>
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               ))}
+              {inverters.length === 0 && (
+                <div className="col-span-full py-20 text-center border-2 border-dashed rounded-2xl bg-muted/5">
+                  <Search className="w-12 h-12 mx-auto text-muted-foreground/30 mb-4" />
+                  <p className="text-muted-foreground font-medium">Nenhum inversor encontrado</p>
+                </div>
+              )}
             </div>
           )}
         </TabsContent>

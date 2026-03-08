@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -10,10 +10,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, Pencil, Trash2, Users, Phone, Mail, Building2, User } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Plus, Search, Pencil, Trash2, Users, Phone, Mail, Building2, User,
+  MapPin, Filter, MoreHorizontal, UserPlus, ArrowRight
+} from "lucide-react";
 import { useForm, Controller } from "react-hook-form";
 import type { Client, InsertClient } from "@shared/schema";
-import { formatCpfCnpj, formatPhone, formatCep, lookupCep, validateCpfCnpj } from "@/lib/utils";
+import { formatCpfCnpj, formatPhone, formatCep, lookupCep, validateCpfCnpj, getInitials } from "@/lib/utils";
 
 function ClientDialog({
   open,
@@ -227,76 +231,102 @@ export default function ClientsPage() {
 
   const filtered = clients.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.email.toLowerCase().includes(search.toLowerCase())
+    c.email.toLowerCase().includes(search.toLowerCase()) ||
+    (c.cpfCnpj || "").includes(search)
   );
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold" data-testid="text-page-title">Clientes</h1>
-          <p className="text-muted-foreground text-sm mt-1">Gerenciar cadastros de clientes</p>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Users className="h-5 w-5 text-primary" />
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight" data-testid="text-page-title">Clientes</h1>
+          </div>
+          <p className="text-muted-foreground">Gerencie o cadastro completo de seus clientes</p>
         </div>
-        <Button onClick={() => { setEditClient(undefined); setDialogOpen(true); }} data-testid="button-new-client">
-          <Plus className="h-4 w-4 mr-2" />
+        <Button onClick={() => { setEditClient(undefined); setDialogOpen(true); }} data-testid="button-new-client" className="hover-elevate">
+          <UserPlus className="h-4 w-4 mr-2" />
           Novo Cliente
         </Button>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar clientes..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="pl-9"
-          data-testid="input-search-clients"
-        />
-      </div>
+      <Card className="border-none shadow-sm bg-card/50 backdrop-blur-sm">
+        <CardContent className="p-4">
+          <div className="flex gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome, e-mail ou CPF/CNPJ..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="pl-9 bg-background border-muted-foreground/20 focus-visible:ring-primary/30"
+                data-testid="input-search-clients"
+              />
+            </div>
+            <Button variant="outline" size="icon" className="shrink-0">
+              <Filter className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {isLoading ? (
-        <div className="space-y-3">
-          {Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-20 w-full rounded-lg" />)}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array(6).fill(0).map((_, i) => (
+            <Card key={i} className="border-muted/40">
+              <CardContent className="p-5">
+                <div className="flex items-center gap-4 mb-4">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-full" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-          <Users className="h-14 w-14 mb-3 opacity-30" />
-          <p className="font-medium">Nenhum cliente encontrado</p>
-          <p className="text-sm mt-1">Adicione clientes para gerenciar projetos</p>
+        <div className="flex flex-col items-center justify-center py-20 bg-muted/20 rounded-xl border-2 border-dashed border-muted text-center px-4">
+          <div className="h-16 w-16 bg-muted/40 rounded-full flex items-center justify-center mb-4">
+            <Users className="h-8 w-8 text-muted-foreground/60" />
+          </div>
+          <h3 className="font-semibold text-lg">Nenhum cliente encontrado</h3>
+          <p className="text-muted-foreground max-w-sm mx-auto">Não encontramos nenhum cliente com os termos pesquisados. Tente outro termo ou adicione um novo cliente.</p>
+          <Button variant="outline" className="mt-4" onClick={() => setSearch("")}>Limpar Busca</Button>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map(client => (
-            <Card key={client.id} className="hover-elevate" data-testid={`card-client-${client.id}`}>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-4">
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    {client.type === "PJ" ? (
-                      <Building2 className="h-5 w-5 text-primary" />
-                    ) : (
-                      <User className="h-5 w-5 text-primary" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-semibold">{client.name}</p>
-                      <Badge variant="outline" className="text-xs">{client.type}</Badge>
-                    </div>
-                    <div className="flex flex-wrap gap-x-4 mt-1">
-                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Mail className="h-3 w-3" /> {client.email}
-                      </span>
-                      {client.phone && (
-                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Phone className="h-3 w-3" /> {client.phone}
-                        </span>
-                      )}
+            <Card key={client.id} className="hover-elevate overflow-visible border-muted/40 group transition-all duration-300" data-testid={`card-client-${client.id}`}>
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
+                      <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                        {getInitials(client.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <p className="font-bold text-foreground truncate leading-none mb-1.5">{client.name}</p>
+                      <Badge variant="secondary" className="text-[10px] uppercase tracking-wider font-semibold h-5">
+                        {client.type === "PJ" ? <Building2 className="h-3 w-3 mr-1" /> : <User className="h-3 w-3 mr-1" />}
+                        {client.type}
+                      </Badge>
                     </div>
                   </div>
-                  <div className="flex gap-2 flex-shrink-0">
+                  <div className="flex gap-1">
                     <Button
                       size="icon"
-                      variant="outline"
+                      variant="ghost"
+                      className="h-8 w-8 text-muted-foreground hover:text-primary"
                       onClick={() => { setEditClient(client); setDialogOpen(true); }}
                       data-testid={`button-edit-client-${client.id}`}
                     >
@@ -304,15 +334,56 @@ export default function ClientsPage() {
                     </Button>
                     <Button
                       size="icon"
-                      variant="outline"
-                      onClick={() => deleteMut.mutate(client.id)}
+                      variant="ghost"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      onClick={() => {
+                        if (confirm(`Excluir cliente ${client.name}?`)) deleteMut.mutate(client.id);
+                      }}
                       disabled={deleteMut.isPending}
                       data-testid={`button-delete-client-${client.id}`}
                     >
-                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </div>
+
+                <div className="space-y-2.5">
+                  <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                    <div className="h-7 w-7 rounded-full bg-muted/50 flex items-center justify-center shrink-0">
+                      <Mail className="h-3.5 w-3.5" />
+                    </div>
+                    <span className="truncate">{client.email}</span>
+                  </div>
+                  {client.phone && (
+                    <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                      <div className="h-7 w-7 rounded-full bg-muted/50 flex items-center justify-center shrink-0">
+                        <Phone className="h-3.5 w-3.5" />
+                      </div>
+                      <span className="truncate">{client.phone}</span>
+                    </div>
+                  )}
+                  {client.cpfCnpj && (
+                    <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                      <div className="h-7 w-7 rounded-full bg-muted/50 flex items-center justify-center shrink-0">
+                        <Building2 className="h-3.5 w-3.5" />
+                      </div>
+                      <span className="truncate">{client.cpfCnpj}</span>
+                    </div>
+                  )}
+                  {(client.rua || client.cidade) && (
+                    <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                      <div className="h-7 w-7 rounded-full bg-muted/50 flex items-center justify-center shrink-0">
+                        <MapPin className="h-3.5 w-3.5" />
+                      </div>
+                      <span className="truncate">{client.cidade || "—"}, {client.estado || "—"}</span>
+                    </div>
+                  )}
+                </div>
+
+                <Button variant="ghost" className="w-full mt-4 h-8 text-xs justify-between group-hover:bg-primary/5 group-hover:text-primary border border-transparent group-hover:border-primary/20 transition-all">
+                  Ver Projetos
+                  <ArrowRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+                </Button>
               </CardContent>
             </Card>
           ))}

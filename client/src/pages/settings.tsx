@@ -8,7 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Upload, Zap, Building2, ImageOff, Mail, Send, Eye, EyeOff, CreditCard, MonitorPlay, Image } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Save, Upload, Zap, Building2, ImageOff, Mail, Send, Eye, EyeOff,
+  CreditCard, MonitorPlay, Image, Settings2, Globe, ShieldCheck, Palette, ArrowRight
+} from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { useUpload } from "@/hooks/use-upload";
 
@@ -100,22 +104,18 @@ function LoginCustomSection({
   bgType, setBgType,
   bgImage, setBgImage,
   uploadingBg, setUploadingBg,
-}: {
-  badgeText: string; setBadgeText: (v: string) => void;
-  headline: string; setHeadline: (v: string) => void;
-  highlight: string; setHighlight: (v: string) => void;
-  description: string; setDescription: (v: string) => void;
-  feature1: string; setFeature1: (v: string) => void;
-  feature2: string; setFeature2: (v: string) => void;
-  feature3: string; setFeature3: (v: string) => void;
-  bgType: "gradient" | "image"; setBgType: (v: "gradient" | "image") => void;
-  bgImage: string; setBgImage: (v: string) => void;
-  uploadingBg: boolean; setUploadingBg: (v: boolean) => void;
-}) {
+}: any) {
   const { toast } = useToast();
   const { uploadFile } = useUpload({
-    onSuccess: (res) => { setBgImage(res.objectPath); setUploadingBg(false); toast({ title: "Imagem de fundo enviada!" }); },
-    onError: () => { toast({ title: "Erro ao enviar imagem", variant: "destructive" }); setUploadingBg(false); },
+    onSuccess: (res) => {
+      setBgImage(res.objectPath);
+      setUploadingBg(false);
+      toast({ title: "Foto de fundo carregada com sucesso!" });
+    },
+    onError: () => {
+      toast({ title: "Erro ao fazer upload da foto de fundo", variant: "destructive" });
+      setUploadingBg(false);
+    },
   });
 
   const handleBgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -125,76 +125,53 @@ function LoginCustomSection({
     await uploadFile(file);
   };
 
-  const headlineWithHighlight = (() => {
-    if (!highlight || !headline.includes(highlight)) return <span>{headline}</span>;
-    const parts = headline.split(highlight);
-    return <>{parts[0]}<span className="text-sky-300">{highlight}</span>{parts.slice(1).join(highlight)}</>;
-  })();
-
   return (
-    <Card>
+    <Card className="border-muted/40 shadow-sm">
       <CardHeader>
         <div className="flex items-center gap-2">
           <MonitorPlay className="h-4 w-4 text-primary" />
-          <CardTitle className="text-base">Personalização da Tela de Login</CardTitle>
+          <CardTitle className="text-lg">Personalização do Portal de Login</CardTitle>
         </div>
-        <CardDescription>Altere textos, imagem de fundo e conteúdo do painel esquerdo sem precisar editar código</CardDescription>
+        <CardDescription>Ajuste as mensagens e o visual da tela de login do portal do integrador.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Preview */}
-        <div className="rounded-xl overflow-hidden border border-border h-40 relative flex items-center" style={{
-          background: bgType === "image" && bgImage
-            ? `url(${bgImage}) center/cover no-repeat`
-            : "linear-gradient(135deg, #0c2340 0%, #0e3460 50%, rgba(13,110,253,0.7) 100%)",
-        }}>
-          <div className="absolute inset-0 bg-black/20" />
-          <div className="relative z-10 p-5 text-white">
-            <div className="text-[10px] bg-white/15 rounded-full px-2 py-0.5 w-fit mb-2 text-sky-200">{badgeText}</div>
-            <div className="text-sm font-bold leading-snug">{headlineWithHighlight}</div>
-            <div className="text-[10px] text-sky-100/70 mt-1 max-w-xs line-clamp-2">{description}</div>
-          </div>
-          <div className="absolute top-2 right-2 text-[9px] bg-black/40 text-white px-1.5 py-0.5 rounded">Preview</div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Badge */}
-          <div className="space-y-1.5">
-            <Label>Texto do Badge</Label>
-            <Input value={badgeText} onChange={e => setBadgeText(e.target.value)} placeholder="Portal SaaS de Homologação" data-testid="input-login-badge" />
-            <p className="text-xs text-muted-foreground">Aparece no topo do painel esquerdo</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Texto do Badge (Topo)</Label>
+              <Input value={badgeText} onChange={e => setBadgeText(e.target.value)} placeholder="Portal SaaS de Homologação" data-testid="input-login-badge" />
+            </div>
+            <div className="space-y-2">
+              <Label>Título Principal (Headline)</Label>
+              <Input value={headline} onChange={e => setHeadline(e.target.value)} placeholder="Gerencie projetos de energia solar..." data-testid="input-login-headline" />
+            </div>
+            <div className="space-y-2">
+              <Label>Destaque no Título (Highlight)</Label>
+              <Input value={highlight} onChange={e => setHighlight(e.target.value)} placeholder="energia solar" data-testid="input-login-highlight" />
+            </div>
+            <div className="space-y-2">
+              <Label>Descrição Curta</Label>
+              <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Acompanhe cada etapa..." className="h-20" data-testid="input-login-description" />
+            </div>
           </div>
 
-          {/* Highlight */}
-          <div className="space-y-1.5">
-            <Label>Palavra(s) em Destaque</Label>
-            <Input value={highlight} onChange={e => setHighlight(e.target.value)} placeholder="energia solar" data-testid="input-login-highlight" />
-            <p className="text-xs text-muted-foreground">Será colorido em azul claro no título</p>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Funcionalidade 1</Label>
+              <Input value={feature1} onChange={e => setFeature1(e.target.value)} placeholder="Acompanhamento em tempo real..." data-testid="input-login-feature-1" />
+            </div>
+            <div className="space-y-2">
+              <Label>Funcionalidade 2</Label>
+              <Input value={feature2} onChange={e => setFeature2(e.target.value)} placeholder="Documentos e ART centralizados..." data-testid="input-login-feature-2" />
+            </div>
+            <div className="space-y-2">
+              <Label>Funcionalidade 3</Label>
+              <Input value={feature3} onChange={e => setFeature3(e.target.value)} placeholder="Status atualizado automaticamente..." data-testid="input-login-feature-3" />
+            </div>
           </div>
         </div>
 
-        {/* Headline */}
-        <div className="space-y-1.5">
-          <Label>Título Principal</Label>
-          <Textarea value={headline} onChange={e => setHeadline(e.target.value)} rows={2} placeholder="Gerencie projetos de energia solar de forma simples e eficiente" data-testid="input-login-headline" />
-          <p className="text-xs text-muted-foreground">A palavra de destaque acima será colorida automaticamente dentro deste texto</p>
-        </div>
-
-        {/* Description */}
-        <div className="space-y-1.5">
-          <Label>Descrição</Label>
-          <Textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} placeholder="Acompanhe cada etapa da homologação..." data-testid="input-login-description" />
-        </div>
-
-        {/* Features */}
-        <div className="space-y-2">
-          <Label>Bullets de Destaque (3 itens)</Label>
-          <Input value={feature1} onChange={e => setFeature1(e.target.value)} placeholder="Bullet 1" data-testid="input-login-feature-1" />
-          <Input value={feature2} onChange={e => setFeature2(e.target.value)} placeholder="Bullet 2" data-testid="input-login-feature-2" />
-          <Input value={feature3} onChange={e => setFeature3(e.target.value)} placeholder="Bullet 3" data-testid="input-login-feature-3" />
-        </div>
-
-        {/* Background */}
-        <div className="space-y-3">
+        <div className="pt-6 border-t border-muted/40 space-y-4">
           <Label>Fundo do Painel</Label>
           <div className="flex gap-3">
             <button
@@ -373,333 +350,225 @@ export default function SettingsPage() {
   });
 
   return (
-    <div className="p-6 space-y-6 max-w-3xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold" data-testid="text-page-title">Configurações</h1>
-        <p className="text-muted-foreground text-sm mt-1">Personalize as informações da sua empresa e o visual do site</p>
+    <div className="p-6 space-y-6 max-w-5xl mx-auto">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <Settings2 className="h-6 w-6 text-primary" />
+            <h1 className="text-2xl font-bold tracking-tight" data-testid="text-page-title">Configurações</h1>
+          </div>
+          <p className="text-muted-foreground">Personalize a plataforma e ajuste integrações</p>
+        </div>
+        <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending} className="hover-elevate shadow-md">
+          <Save className="h-4 w-4 mr-2" />
+          {saveMut.isPending ? "Salvando..." : "Salvar Alterações"}
+        </Button>
       </div>
 
       {isLoading ? (
-        <div className="space-y-4">
-          <Skeleton className="h-48 w-full rounded-lg" />
-          <Skeleton className="h-32 w-full rounded-lg" />
-          <Skeleton className="h-64 w-full rounded-lg" />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Skeleton className="h-48 col-span-1 rounded-xl" />
+          <Skeleton className="h-96 col-span-3 rounded-xl" />
         </div>
       ) : (
-        <div className="space-y-6">
-          {/* Identidade Visual */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Building2 className="h-4 w-4 text-primary" />
-                <CardTitle className="text-base">Identidade da Empresa</CardTitle>
-              </div>
-              <CardDescription>Configure o nome e logo da sua empresa</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-1.5">
-                <Label htmlFor="company-name">Nome da Empresa</Label>
-                <Input
-                  id="company-name"
-                  value={companyName}
-                  onChange={e => setCompanyName(e.target.value)}
-                  placeholder="Randoli Engenharia"
-                  data-testid="input-company-name"
+        <Tabs defaultValue="general" className="w-full">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <aside className="md:col-span-1">
+              <TabsList className="flex flex-col h-auto bg-transparent border-none p-0 space-y-1">
+                <TabsTrigger value="general" className="w-full justify-start px-4 py-2 h-10 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg transition-all border border-transparent data-[state=active]:border-primary/20">
+                  <Globe className="h-4 w-4 mr-2" /> Geral
+                </TabsTrigger>
+                <TabsTrigger value="visual" className="w-full justify-start px-4 py-2 h-10 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg transition-all border border-transparent data-[state=active]:border-primary/20">
+                  <Palette className="h-4 w-4 mr-2" /> Identidade
+                </TabsTrigger>
+                <TabsTrigger value="notifications" className="w-full justify-start px-4 py-2 h-10 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg transition-all border border-transparent data-[state=active]:border-primary/20">
+                  <Mail className="h-4 w-4 mr-2" /> Notificações
+                </TabsTrigger>
+                <TabsTrigger value="integrations" className="w-full justify-start px-4 py-2 h-10 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg transition-all border border-transparent data-[state=active]:border-primary/20">
+                  <CreditCard className="h-4 w-4 mr-2" /> Pagamentos
+                </TabsTrigger>
+              </TabsList>
+            </aside>
+
+            <div className="md:col-span-3 space-y-6">
+              <TabsContent value="general" className="mt-0 space-y-6">
+                <Card className="border-muted/40 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Informações Gerais</CardTitle>
+                    <CardDescription>Configure os dados básicos da sua empresa na plataforma.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="company-name">Nome da Empresa</Label>
+                      <Input id="company-name" value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Randoli Engenharia" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="portal-url">URL do Portal (Integrador)</Label>
+                      <Input id="portal-url" value={portalUrl} onChange={e => setPortalUrl(e.target.value)} placeholder="https://portal.suaempresa.com" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-muted/40 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Zap className="h-4 w-4 text-amber-500" /> Carrossel de Parceiros
+                    </CardTitle>
+                    <CardDescription>Gerencie as logos que aparecem no site principal.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 flex items-start gap-4">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <ArrowRight className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-primary">Gerenciar no Módulo de Parceiros</p>
+                        <p className="text-sm text-muted-foreground mt-1">A configuração detalhada do carrossel, incluindo logos, nomes e links, deve ser feita diretamente na página de parceiros.</p>
+                        <Button variant="ghost" className="p-0 h-auto mt-2 text-primary" onClick={() => window.location.href = "/partners"}>Ir para Parceiros</Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="visual" className="mt-0 space-y-6">
+                <Card className="border-muted/40 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Logomarca</CardTitle>
+                    <CardDescription>Faça o upload da sua logo principal.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <LogoUploadSection currentLogoUrl={logoUrl} onLogoUrlChange={setLogoUrl} />
+                  </CardContent>
+                </Card>
+
+                <LoginCustomSection
+                  badgeText={loginBadgeText} setBadgeText={setLoginBadgeText}
+                  headline={loginHeadline} setHeadline={setLoginHeadline}
+                  highlight={loginHighlight} setHighlight={setLoginHighlight}
+                  description={loginDescription} setDescription={setLoginDescription}
+                  feature1={loginFeature1} setFeature1={setLoginFeature1}
+                  feature2={loginFeature2} setFeature2={setLoginFeature2}
+                  feature3={loginFeature3} setFeature3={setLoginFeature3}
+                  bgType={loginBgType} setBgType={setLoginBgType}
+                  bgImage={loginBgImage} setBgImage={setLoginBgImage}
+                  uploadingBg={uploadingBg} setUploadingBg={setUploadingBg}
                 />
-              </div>
-              <div className="space-y-2">
-                <Label>Logo da Empresa</Label>
-                <LogoUploadSection currentLogoUrl={logoUrl} onLogoUrlChange={setLogoUrl} />
-              </div>
-            </CardContent>
-          </Card>
+              </TabsContent>
 
-          {/* Parceiros */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Zap className="h-4 w-4 text-primary" />
-                <CardTitle className="text-base">Carrossel de Parceiros</CardTitle>
-              </div>
-              <CardDescription>
-                Gerencie os parceiros e clientes exibidos no carrossel do site. Vá para a seção "Parceiros" no menu lateral.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-3 p-4 rounded-lg bg-primary/5 border border-primary/20">
-                <Zap className="h-8 w-8 text-primary flex-shrink-0" />
-                <div>
-                  <p className="text-sm font-medium">Gerenciar Parceiros</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Adicione logos de clientes e parceiros, configure a ordem de exibição no carrossel e visualize um preview em tempo real.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              <TabsContent value="notifications" className="mt-0 space-y-6">
+                <Card className="border-muted/40 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Configuração SMTP</CardTitle>
+                    <CardDescription>O sistema utiliza esses dados para enviar e-mails automáticos.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-muted/50">
+                      <div className="space-y-0.5">
+                        <p className="font-semibold">E-mails Automáticos</p>
+                        <p className="text-sm text-muted-foreground">Enviar avisos de status para integradores</p>
+                      </div>
+                      <Switch checked={emailEnabled} onCheckedChange={setEmailEnabled} />
+                    </div>
 
-          {/* Notificações por E-mail */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-primary" />
-                <CardTitle className="text-base">Notificações por E-mail</CardTitle>
-              </div>
-              <CardDescription>
-                Configure o servidor SMTP para enviar notificações automáticas aos integradores quando o status de um projeto for atualizado.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              {/* Enable toggle */}
-              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/40 border border-border">
-                <div>
-                  <p className="text-sm font-medium">Ativar notificações automáticas</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Envia e-mail ao integrador a cada mudança de status</p>
-                </div>
-                <Switch
-                  checked={emailEnabled}
-                  onCheckedChange={setEmailEnabled}
-                  data-testid="switch-email-enabled"
-                />
-              </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Servidor SMTP</Label>
+                        <Input value={smtpHost} onChange={e => setSmtpHost(e.target.value)} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Porta</Label>
+                        <Input value={smtpPort} onChange={e => setSmtpPort(e.target.value)} />
+                      </div>
+                    </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="smtp-host">Servidor SMTP</Label>
-                  <Input
-                    id="smtp-host"
-                    value={smtpHost}
-                    onChange={e => setSmtpHost(e.target.value)}
-                    placeholder="smtp.office365.com"
-                    data-testid="input-smtp-host"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="smtp-port">Porta</Label>
-                  <Input
-                    id="smtp-port"
-                    value={smtpPort}
-                    onChange={e => setSmtpPort(e.target.value)}
-                    placeholder="587"
-                    data-testid="input-smtp-port"
-                  />
-                </div>
-              </div>
+                    <div className="space-y-2">
+                      <Label>E-mail de Envio (User)</Label>
+                      <Input value={smtpUser} onChange={e => setSmtpUser(e.target.value)} />
+                    </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="smtp-user">E-mail de envio (usuário SMTP)</Label>
-                <Input
-                  id="smtp-user"
-                  type="email"
-                  value={smtpUser}
-                  onChange={e => setSmtpUser(e.target.value)}
-                  placeholder="notificacoes@randoli.eng.br"
-                  data-testid="input-smtp-user"
-                />
-              </div>
+                    <div className="space-y-2">
+                      <Label>Senha SMTP</Label>
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          value={smtpPass}
+                          onChange={e => setSmtpPass(e.target.value)}
+                          placeholder="••••••••"
+                          className="pr-10"
+                        />
+                        <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" onClick={() => setShowPassword(!showPassword)}>
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="smtp-pass">Senha SMTP</Label>
-                <div className="relative">
-                  <Input
-                    id="smtp-pass"
-                    type={showPassword ? "text" : "password"}
-                    value={smtpPass}
-                    onChange={e => setSmtpPass(e.target.value)}
-                    placeholder="Deixe em branco para manter a senha atual"
-                    className="pr-10"
-                    data-testid="input-smtp-pass"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                    onClick={() => setShowPassword(v => !v)}
-                    data-testid="button-toggle-password"
-                  >
-                    {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">Para Outlook/Office365, use a senha do aplicativo ou a senha da conta.</p>
-              </div>
+                    <div className="pt-4 border-t border-muted/40">
+                      <div className="flex items-center gap-3">
+                        <Input
+                          value={testEmailTo}
+                          onChange={e => setTestEmailTo(e.target.value)}
+                          placeholder="E-mail para teste"
+                          className="max-w-xs h-9 text-sm"
+                        />
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => testEmailMut.mutate()}
+                          disabled={testEmailMut.isPending}
+                          className="h-9 hover-elevate"
+                        >
+                          <Send className="h-3.5 w-3.5 mr-2" />
+                          {testEmailMut.isPending ? "Enviando..." : "Enviar Teste"}
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="smtp-from">E-mail do remetente (From)</Label>
-                <Input
-                  id="smtp-from"
-                  type="email"
-                  value={smtpFrom}
-                  onChange={e => setSmtpFrom(e.target.value)}
-                  placeholder="Mesmo que o usuário SMTP, ou outro autorizado"
-                  data-testid="input-smtp-from"
-                />
-              </div>
+              <TabsContent value="integrations" className="mt-0 space-y-6">
+                <Card className="border-muted/40 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Mercado Pago</CardTitle>
+                    <CardDescription>Configure o recebimento automático de projetos via PIX ou Cartão.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border">
+                      <div className="space-y-0.5">
+                        <p className="font-semibold">Pagamento Integrado</p>
+                        <p className="text-sm text-muted-foreground">Habilitar checkout Mercado Pago no portal</p>
+                      </div>
+                      <Switch checked={mpEnabled} onCheckedChange={setMpEnabled} />
+                    </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="portal-url">URL do portal (link nos e-mails)</Label>
-                <Input
-                  id="portal-url"
-                  value={portalUrl}
-                  onChange={e => setPortalUrl(e.target.value)}
-                  placeholder="https://projetos.randolisolar.com.br"
-                  data-testid="input-portal-url"
-                />
-              </div>
-
-              {/* Test email */}
-              <div className="pt-2 border-t border-border space-y-3">
-                <p className="text-sm font-medium">Enviar e-mail de teste</p>
-                <div className="flex gap-2">
-                  <Input
-                    type="email"
-                    value={testEmailTo}
-                    onChange={e => setTestEmailTo(e.target.value)}
-                    placeholder="destinatario@email.com"
-                    className="flex-1"
-                    data-testid="input-test-email-to"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => testEmailMut.mutate()}
-                    disabled={testEmailMut.isPending || !testEmailTo}
-                    data-testid="button-send-test-email"
-                  >
-                    <Send className="h-3.5 w-3.5 mr-1.5" />
-                    {testEmailMut.isPending ? "Enviando..." : "Testar"}
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Salve as configurações antes de testar. O e-mail de teste usa as configurações já salvas no servidor.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Pagamentos — Mercado Pago */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4 text-primary" />
-                <CardTitle className="text-base">Pagamentos — Mercado Pago</CardTitle>
-              </div>
-              <CardDescription>
-                Configure a integração com o Mercado Pago para cobranças automáticas. Quando um projeto mudar para "Aprovado / Pag. Pendente", um link de pagamento será gerado automaticamente e enviado ao integrador.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/40 border border-border">
-                <div>
-                  <p className="text-sm font-medium">Ativar cobranças via Mercado Pago</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Gera link de pagamento automaticamente ao aprovar projeto</p>
-                </div>
-                <Switch
-                  checked={mpEnabled}
-                  onCheckedChange={setMpEnabled}
-                  data-testid="switch-mp-enabled"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="mp-access-token">Access Token (Produção)</Label>
-                <div className="relative">
-                  <Input
-                    id="mp-access-token"
-                    type={showMpToken ? "text" : "password"}
-                    value={mpAccessToken}
-                    onChange={e => setMpAccessToken(e.target.value)}
-                    placeholder="APP_USR-..."
-                    className="pr-10 font-mono text-xs"
-                    data-testid="input-mp-access-token"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                    onClick={() => setShowMpToken(v => !v)}
-                    data-testid="button-toggle-mp-token"
-                  >
-                    {showMpToken ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Encontre em: <a href="https://www.mercadopago.com.br/developers/panel/app" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Mercado Pago Developers</a> → Sua aplicação → Credenciais de Produção
-                </p>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="mp-public-key">Public Key (Produção)</Label>
-                <Input
-                  id="mp-public-key"
-                  value={mpPublicKey}
-                  onChange={e => setMpPublicKey(e.target.value)}
-                  placeholder="APP_USR-..."
-                  className="font-mono text-xs"
-                  data-testid="input-mp-public-key"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Chave pública usada no checkout embutido. Encontre nas mesmas Credenciais de Produção acima.
-                </p>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="mp-webhook-secret">Webhook Secret (opcional)</Label>
-                <div className="relative">
-                  <Input
-                    id="mp-webhook-secret"
-                    type={showMpToken ? "text" : "password"}
-                    value={mpWebhookSecret}
-                    onChange={e => setMpWebhookSecret(e.target.value)}
-                    placeholder="Chave secreta do webhook"
-                    className="pr-10 font-mono text-xs"
-                    data-testid="input-mp-webhook-secret"
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Encontre em: Mercado Pago Developers → Sua aplicação → Webhooks → Chave secreta. Valida a autenticidade das notificações.
-                </p>
-              </div>
-
-              <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-                <p className="text-xs font-medium text-blue-800 dark:text-blue-300">Como funciona:</p>
-                <ol className="text-xs text-blue-700 dark:text-blue-400 mt-1 space-y-0.5 list-decimal list-inside">
-                  <li>Admin muda o status do projeto para "Aprovado / Pag. Pendente"</li>
-                  <li>Um link de pagamento do Mercado Pago é gerado automaticamente</li>
-                  <li>O integrador recebe o link por e-mail e no portal</li>
-                  <li>Após o pagamento, o status avança automaticamente para "Projeto Técnico"</li>
-                </ol>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Personalização do Login */}
-          <LoginCustomSection
-            badgeText={loginBadgeText} setBadgeText={setLoginBadgeText}
-            headline={loginHeadline} setHeadline={setLoginHeadline}
-            highlight={loginHighlight} setHighlight={setLoginHighlight}
-            description={loginDescription} setDescription={setLoginDescription}
-            feature1={loginFeature1} setFeature1={setLoginFeature1}
-            feature2={loginFeature2} setFeature2={setLoginFeature2}
-            feature3={loginFeature3} setFeature3={setLoginFeature3}
-            bgType={loginBgType} setBgType={setLoginBgType}
-            bgImage={loginBgImage} setBgImage={setLoginBgImage}
-            uploadingBg={uploadingBg} setUploadingBg={setUploadingBg}
-          />
-
-          {/* Save Button */}
-          <div className="flex justify-end">
-            <Button
-              onClick={() => saveMut.mutate()}
-              disabled={saveMut.isPending}
-              data-testid="button-save-settings"
-            >
-              <Save className="h-4 w-4 mr-2" />
-              {saveMut.isPending ? "Salvando..." : "Salvar Configurações"}
-            </Button>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Public Key</Label>
+                        <Input value={mpPublicKey} onChange={e => setMpPublicKey(e.target.value)} placeholder="APP_USR-..." />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Access Token</Label>
+                        <div className="relative">
+                          <Input
+                            type={showMpToken ? "text" : "password"}
+                            value={mpAccessToken}
+                            onChange={e => setMpAccessToken(e.target.value)}
+                            placeholder="APP_USR-..."
+                            className="pr-10"
+                          />
+                          <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" onClick={() => setShowMpToken(!showMpToken)}>
+                            {showMpToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </div>
           </div>
-        </div>
+        </Tabs>
       )}
     </div>
   );

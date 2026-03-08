@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,24 +11,32 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Plus, Search, Pencil, Trash2, KeyRound, Users, Mail, Phone,
   User, ShieldCheck, Eye, EyeOff, UserPlus, MapPin, Building2, FileText,
-  Wrench, DollarSign
+  Wrench, DollarSign, UserCheck, Shield
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Controller, useForm } from "react-hook-form";
 import type { User as UserType } from "@shared/schema";
-import { formatCpfCnpj, formatPhone, formatCep, lookupCep as lookupCepUtil } from "@/lib/utils";
+import { formatCpfCnpj, formatPhone, formatCep, lookupCep as lookupCepUtil, getInitials } from "@/lib/utils";
 import { PasswordStrength } from "@/components/password-strength";
 
 type SafeUser = Omit<UserType, "password">;
 
 const ROLE_LABELS: Record<string, string> = {
-  admin: "Admin",
+  admin: "Administrador",
   engenharia: "Engenharia",
   financeiro: "Financeiro",
   integrador: "Integrador",
+};
+
+const ROLE_COLORS: Record<string, string> = {
+  admin: "bg-red-500/10 text-red-600 border-red-200 dark:border-red-900/50",
+  engenharia: "bg-blue-500/10 text-blue-600 border-blue-200 dark:border-blue-900/50",
+  financeiro: "bg-emerald-500/10 text-emerald-600 border-emerald-200 dark:border-emerald-900/50",
+  integrador: "bg-amber-500/10 text-amber-600 border-amber-200 dark:border-amber-900/50",
 };
 
 function EditUserDialog({ open, onClose, user }: { open: boolean; onClose: () => void; user: SafeUser }) {
@@ -557,16 +565,24 @@ function DeleteUserDialog({ open, onClose, user }: { open: boolean; onClose: () 
 }
 
 export default function UsersPage() {
-  const { user: currentUser } = useAuth();
-  const { toast } = useToast();
   const [search, setSearch] = useState("");
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editUser, setEditUser] = useState<SafeUser | null>(null);
   const [resetUser, setResetUser] = useState<SafeUser | null>(null);
-  const [deleteUser, setDeleteUser] = useState<SafeUser | null>(null);
-  const [createOpen, setCreateOpen] = useState(false);
+  const { toast } = useToast();
+  const { user: currentUser } = useAuth();
 
   const { data: users = [], isLoading } = useQuery<SafeUser[]>({
     queryKey: ["/api/users"],
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (id: string) => apiRequest("DELETE", `/api/users/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      toast({ title: "Usuário removido com sucesso!" });
+    },
+    onError: (e: any) => toast({ title: "Erro ao excluir", description: e.message, variant: "destructive" }),
   });
 
   const filtered = users.filter(u =>
@@ -575,116 +591,158 @@ export default function UsersPage() {
     (u.email || "").toLowerCase().includes(search.toLowerCase())
   );
 
-  const admins = filtered.filter(u => u.role === "admin");
-  const engenharia = filtered.filter(u => u.role === "engenharia");
-  const financeiro = filtered.filter(u => u.role === "financeiro");
-  const integradores = filtered.filter(u => u.role === "integrador");
-
   return (
-    <div className="p-6 space-y-5 max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold flex items-center gap-2">
-            <Users className="h-5 w-5 text-primary" /> Gestão de Usuários
-          </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Gerencie integradores e funcionários da equipe</p>
+          <div className="flex items-center gap-2 mb-1">
+            <Users className="h-6 w-6 text-primary" />
+            <h1 className="text-2xl font-bold tracking-tight" data-testid="text-page-title">Usuários</h1>
+          </div>
+          <p className="text-muted-foreground">Gerencie a equipe interna e integradores parceiros</p>
         </div>
-        <Button onClick={() => setCreateOpen(true)} data-testid="button-novo-usuario">
-          <UserPlus className="h-4 w-4 mr-2" /> Novo Usuário
+        <Button onClick={() => setCreateDialogOpen(true)} data-testid="button-new-user" className="hover-elevate">
+          <UserPlus className="h-4 w-4 mr-2" />
+          Adicionar Usuário
         </Button>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-xs">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          className="pl-9"
-          placeholder="Buscar por nome, usuário ou e-mail..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          data-testid="input-search-users"
-        />
-      </div>
+      <Card className="border-none shadow-sm bg-card/50 backdrop-blur-sm">
+        <CardContent className="p-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome, usuário ou e-mail..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="pl-9 bg-background border-muted-foreground/20 focus-visible:ring-primary/30"
+              data-testid="input-search-users"
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {isLoading ? (
-        <div className="space-y-3">
-          {Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array(6).fill(0).map((_, i) => (
+            <Card key={i} className="border-muted/40">
+              <CardContent className="p-5 flex items-center gap-4">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 bg-muted/20 rounded-xl border-2 border-dashed border-muted">
+          <div className="h-16 w-16 bg-muted/40 rounded-full flex items-center justify-center mb-4">
+            <Users className="h-8 w-8 text-muted-foreground/60" />
+          </div>
+          <p className="font-semibold text-lg">Nenhum usuário encontrado</p>
+          <p className="text-muted-foreground">Tente ajustar sua busca ou adicione um novo usuário.</p>
         </div>
       ) : (
-        <div className="space-y-6">
-          {/* Admins */}
-          {admins.length > 0 && (
-            <div>
-              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2 mb-3">
-                <ShieldCheck className="h-3.5 w-3.5" /> Administradores ({admins.length})
-              </h2>
-              <div className="space-y-2">
-                {admins.map(u => (
-                  <UserRow key={u.id} user={u} currentUserId={currentUser?.id}
-                    onEdit={() => setEditUser(u)} onReset={() => setResetUser(u)} onDelete={() => setDeleteUser(u)} />
-                ))}
-              </div>
-            </div>
-          )}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map(u => (
+            <Card key={u.id} className="hover-elevate overflow-visible border-muted/40 group transition-all duration-300" data-testid={`card-user-${u.id}`}>
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
+                      <AvatarImage src={`https://avatar.vercel.sh/${u.username}.png`} />
+                      <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                        {getInitials(u.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <p className="font-bold text-foreground truncate leading-none mb-1.5">{u.name}</p>
+                      <Badge variant="outline" className={`text-[10px] uppercase tracking-wider font-semibold ${ROLE_COLORS[u.role] || ""}`}>
+                        {u.role === "admin" && <Shield className="h-3 w-3 mr-1 inline" />}
+                        {ROLE_LABELS[u.role] || u.role}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-muted-foreground hover:text-primary transition-colors"
+                      onClick={() => setEditUser(u)}
+                      data-testid={`button-edit-user-${u.id}`}
+                      title="Editar"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-muted-foreground hover:text-amber-600 transition-colors"
+                      onClick={() => setResetUser(u)}
+                      data-testid={`button-reset-user-${u.id}`}
+                      title="Redefinir Senha"
+                    >
+                      <KeyRound className="h-3.5 w-3.5" />
+                    </Button>
+                    {u.id !== currentUser?.id && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive transition-colors"
+                        onClick={() => {
+                          if (confirm(`Excluir usuário ${u.name}?`)) deleteMut.mutate(u.id);
+                        }}
+                        disabled={deleteMut.isPending}
+                        data-testid={`button-delete-user-${u.id}`}
+                        title="Excluir"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
 
-          {/* Equipe Técnica */}
-          {engenharia.length > 0 && (
-            <div>
-              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2 mb-3">
-                <Wrench className="h-3.5 w-3.5" /> Equipe de Engenharia ({engenharia.length})
-              </h2>
-              <div className="space-y-2">
-                {engenharia.map(u => (
-                  <UserRow key={u.id} user={u} currentUserId={currentUser?.id}
-                    onEdit={() => setEditUser(u)} onReset={() => setResetUser(u)} onDelete={() => setDeleteUser(u)} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Equipe Financeira */}
-          {financeiro.length > 0 && (
-            <div>
-              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2 mb-3">
-                <DollarSign className="h-3.5 w-3.5" /> Equipe Financeira ({financeiro.length})
-              </h2>
-              <div className="space-y-2">
-                {financeiro.map(u => (
-                  <UserRow key={u.id} user={u} currentUserId={currentUser?.id}
-                    onEdit={() => setEditUser(u)} onReset={() => setResetUser(u)} onDelete={() => setDeleteUser(u)} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Integradores */}
-          <div>
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2 mb-3">
-              <User className="h-3.5 w-3.5" /> Integradores ({integradores.length})
-            </h2>
-            {integradores.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                <p>Nenhum integrador encontrado</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {integradores.map(u => (
-                  <UserRow key={u.id} user={u} currentUserId={currentUser?.id}
-                    onEdit={() => setEditUser(u)} onReset={() => setResetUser(u)} onDelete={() => setDeleteUser(u)} />
-                ))}
-              </div>
-            )}
-          </div>
+                <div className="space-y-2.5">
+                  <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                    <div className="h-7 w-7 rounded-full bg-muted/50 flex items-center justify-center shrink-0">
+                      <User className="h-3.5 w-3.5" />
+                    </div>
+                    <span className="truncate">{u.username}</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                    <div className="h-7 w-7 rounded-full bg-muted/50 flex items-center justify-center shrink-0">
+                      <Mail className="h-3.5 w-3.5" />
+                    </div>
+                    <span className="truncate">{u.email || "Sem e-mail"}</span>
+                  </div>
+                  {u.phone && (
+                    <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                      <div className="h-7 w-7 rounded-full bg-muted/50 flex items-center justify-center shrink-0">
+                        <Phone className="h-3.5 w-3.5" />
+                      </div>
+                      <span className="truncate">{u.phone}</span>
+                    </div>
+                  )}
+                  {u.company && (
+                    <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                      <div className="h-7 w-7 rounded-full bg-muted/50 flex items-center justify-center shrink-0">
+                        <Building2 className="h-3.5 w-3.5" />
+                      </div>
+                      <span className="truncate font-medium">{u.company}</span>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
 
-      {/* Dialogs */}
+      <CreateUserDialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} />
       {editUser && <EditUserDialog open={!!editUser} onClose={() => setEditUser(null)} user={editUser} />}
       {resetUser && <ResetPasswordDialog open={!!resetUser} onClose={() => setResetUser(null)} user={resetUser} />}
-      {deleteUser && <DeleteUserDialog open={!!deleteUser} onClose={() => setDeleteUser(null)} user={deleteUser} />}
-      <CreateUserDialog open={createOpen} onClose={() => setCreateOpen(false)} />
     </div>
   );
 }

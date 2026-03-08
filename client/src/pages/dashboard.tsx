@@ -114,28 +114,27 @@ function formatBRL(val: number | string | null | undefined) {
 
 function ProjectRow({ project, linkTo }: { project: Project & { client: Client | null }; linkTo?: string }) {
   const inner = (
-    <div className={`flex items-start gap-3 py-3 border-b border-border/50 last:border-0 ${linkTo ? "hover:bg-muted/30 rounded-md px-2 -mx-2 transition-colors cursor-pointer" : ""}`}>
-      <div className="h-2.5 w-2.5 rounded-full flex-shrink-0 mt-1.5" style={{ backgroundColor: STATUS_COLORS[project.status] }} />
+    <div className={`flex items-start gap-3 py-3 border-b border-border/50 last:border-0 ${linkTo ? "hover-elevate rounded-md px-2 -mx-2 transition-colors cursor-pointer" : ""}`}>
+      <div className="h-2.5 w-2.5 rounded-full flex-shrink-0 mt-1.5 shadow-[0_0_8px_rgba(0,0,0,0.1)]" style={{ backgroundColor: STATUS_COLORS[project.status] }} />
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{project.title}</p>
+        <p className="text-sm font-semibold truncate text-foreground">{project.title}</p>
         <p className="text-xs text-muted-foreground truncate">
           {project.client?.name || "—"}
           {project.concessionaria ? ` · ${project.concessionaria}` : ""}
         </p>
         {project.updatedAt && (
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {new Date(project.updatedAt).toLocaleDateString("pt-BR")}
+          <p className="text-[10px] text-muted-foreground/70 mt-0.5">
+            Atualizado em {new Date(project.updatedAt).toLocaleDateString("pt-BR")}
           </p>
         )}
       </div>
       <div className="flex flex-col items-end gap-1 flex-shrink-0">
         {project.valor && (
-          <span className="text-sm font-semibold text-foreground">{formatBRL(project.valor)}</span>
+          <span className="text-sm font-bold text-foreground">{formatBRL(project.valor)}</span>
         )}
-        <span className={`text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${STATUS_BADGE_STYLES[project.status]}`}>
+        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider whitespace-nowrap ${STATUS_BADGE_STYLES[project.status]}`}>
           {STATUS_LABELS[project.status] || project.status}
         </span>
-        {linkTo && <ExternalLink className="h-3 w-3 text-muted-foreground/50 mt-0.5" />}
       </div>
     </div>
   );
@@ -189,34 +188,33 @@ export default function DashboardPage() {
     .filter(d => d.value > 0);
 
   const quickActions = [
-    { title: "Novo Projeto", desc: "Cadastrar projeto", href: "/projetos", icon: Plus, color: "text-primary bg-primary/10" },
-    { title: "Kanban", desc: "Ver quadro visual", href: "/kanban", icon: KanbanSquare, color: "text-violet-600 bg-violet-100 dark:text-violet-400 dark:bg-violet-900/30" },
-    { title: "Clientes", desc: "Gerenciar integradores", href: "/clientes", icon: Users, color: "text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30" },
+    { title: "Novo Projeto", desc: "Cadastrar projeto", href: "/projetos", icon: Plus, variant: "default" as const },
+    { title: "Kanban", desc: "Ver quadro visual", href: "/kanban", icon: KanbanSquare, variant: "outline" as const },
+    { title: "Clientes", desc: "Gerenciar integradores", href: "/clientes", icon: Users, variant: "outline" as const },
     ...(user?.role === "admin" || user?.role === "financeiro" ? [
-      { title: "Configurações", desc: "Ajustar sistema", href: "/configuracoes", icon: Settings, color: "text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-800" },
+      { title: "Configurações", desc: "Ajustar sistema", href: "/configuracoes", icon: Settings, variant: "ghost" as const },
     ] : []),
   ];
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="p-8 space-y-8 max-w-7xl mx-auto">
       {/* Header + Quick Actions */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground" data-testid="text-page-title">Dashboard</h1>
-          <p className="text-muted-foreground text-sm mt-1">Acompanhe projetos e homologações em tempo real</p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground" data-testid="text-page-title">Dashboard</h1>
+          <p className="text-muted-foreground text-base mt-1">Visão geral da operação e desempenho em tempo real</p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap">
           {quickActions.map(action => (
             <Link key={action.title} href={action.href}>
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card hover-elevate cursor-pointer transition-all" data-testid={`button-quick-${action.title.toLowerCase().replace(/\s/g, "-")}`}>
-                <div className={`h-7 w-7 rounded-md flex items-center justify-center flex-shrink-0 ${action.color}`}>
-                  <action.icon className="h-3.5 w-3.5" />
-                </div>
-                <div className="hidden sm:block">
-                  <p className="text-xs font-semibold leading-none">{action.title}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">{action.desc}</p>
-                </div>
-              </div>
+              <Button 
+                variant={action.variant}
+                className="gap-2 h-11 px-5 font-semibold shadow-sm"
+                data-testid={`button-quick-${action.title.toLowerCase().replace(/\s/g, "-")}`}
+              >
+                <action.icon className="h-4 w-4" />
+                <span>{action.title}</span>
+              </Button>
             </Link>
           ))}
         </div>
@@ -224,145 +222,135 @@ export default function DashboardPage() {
 
       {/* Atenção Necessária */}
       {!projectsLoading && attentionProjects.length > 0 && (
-        <div className="rounded-xl border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/15 p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <AlertCircle className="h-4 w-4 text-orange-500" />
-            <p className="text-sm font-semibold text-orange-800 dark:text-orange-300">
-              {attentionProjects.length} projeto{attentionProjects.length !== 1 ? "s" : ""} precisam de atenção
-            </p>
+        <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-5 shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-full bg-destructive/10 flex items-center justify-center">
+                <AlertCircle className="h-5 w-5 text-destructive" />
+              </div>
+              <p className="text-base font-bold text-foreground">
+                Atenção Necessária
+                <span className="ml-2 text-sm font-normal text-muted-foreground">
+                  ({attentionProjects.length} projeto{attentionProjects.length !== 1 ? "s" : ""} pendente{attentionProjects.length !== 1 ? "s" : ""})
+                </span>
+              </p>
+            </div>
+            <Link href="/projetos" className="text-sm font-semibold text-primary hover:underline">Ver todos</Link>
           </div>
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {attentionProjects.slice(0, 3).map(p => (
               <Link key={p.id} href={`/projetos`}>
-                <div className="flex items-center gap-3 bg-white dark:bg-orange-900/20 rounded-lg px-3 py-2.5 border border-orange-100 dark:border-orange-800/50 hover:border-orange-300 dark:hover:border-orange-600 transition-colors cursor-pointer" data-testid={`card-attention-${p.id}`}>
-                  <div className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: STATUS_COLORS[p.status] }} />
+                <div className="flex items-center gap-3 bg-card rounded-lg px-4 py-3 border border-border shadow-sm hover-elevate cursor-pointer transition-all" data-testid={`card-attention-${p.id}`}>
+                  <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: STATUS_COLORS[p.status] }} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold truncate">{p.title}</p>
-                    <p className="text-[10px] text-muted-foreground truncate">{p.client?.name || "—"}</p>
+                    <p className="text-xs font-bold truncate text-foreground uppercase tracking-tight">{p.title}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{p.client?.name || "—"}</p>
                   </div>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 ${STATUS_BADGE_STYLES[p.status]}`}>
-                    {STATUS_LABELS[p.status]}
-                  </span>
-                  <ChevronRight className="h-3 w-3 text-muted-foreground/50 flex-shrink-0" />
+                  <ChevronRight className="h-4 w-4 text-muted-foreground/40 flex-shrink-0" />
                 </div>
               </Link>
             ))}
-            {attentionProjects.length > 3 && (
-              <p className="text-xs text-orange-600 dark:text-orange-400 text-right">
-                + {attentionProjects.length - 3} mais
-              </p>
-            )}
           </div>
         </div>
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="hover-elevate">
-          <CardContent className="pt-5 pb-4 px-5">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground mb-1">Total de Projetos</p>
-                {statsLoading ? <Skeleton className="h-8 w-16" /> : (
-                  <div className="text-3xl font-bold" data-testid="text-total-projects">{stats?.totalProjects ?? 0}</div>
-                )}
-                <p className="text-xs text-muted-foreground mt-1">projetos cadastrados</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[
+          { 
+            label: "Total de Projetos", 
+            value: stats?.totalProjects ?? 0, 
+            sub: "Projetos no sistema", 
+            icon: FolderOpen, 
+            color: "text-blue-600", 
+            bg: "bg-blue-500/10",
+            border: "border-blue-500/20",
+            testId: "text-total-projects"
+          },
+          { 
+            label: "Integradores", 
+            value: stats?.totalClients ?? 0, 
+            sub: "Parceiros ativos", 
+            icon: Users, 
+            color: "text-indigo-600", 
+            bg: "bg-indigo-500/10",
+            border: "border-indigo-500/20",
+            testId: "text-total-clients"
+          },
+          { 
+            label: "Em Andamento", 
+            value: emAndamento, 
+            sub: "Processo ativo", 
+            icon: Zap, 
+            color: "text-amber-600", 
+            bg: "bg-amber-500/10",
+            border: "border-amber-500/20",
+            testId: "text-in-progress-projects"
+          },
+          { 
+            label: "Homologados", 
+            value: homologados, 
+            sub: "Conexões aprovadas", 
+            icon: ShieldCheck, 
+            color: "text-emerald-600", 
+            bg: "bg-emerald-500/10",
+            border: "border-emerald-500/20",
+            testId: "text-homologated-projects"
+          }
+        ].map((kpi, idx) => (
+          <Card key={idx} className={`hover-elevate border-l-4 ${kpi.border} overflow-visible`}>
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground tracking-tight uppercase mb-2">{kpi.label}</p>
+                  {statsLoading ? <Skeleton className="h-9 w-16" /> : (
+                    <div className={`text-4xl font-black tracking-tighter ${kpi.color}`} data-testid={kpi.testId}>{kpi.value}</div>
+                  )}
+                  <p className="text-xs text-muted-foreground/80 mt-2 font-medium">{kpi.sub}</p>
+                </div>
+                <div className={`h-12 w-12 rounded-xl ${kpi.bg} flex items-center justify-center flex-shrink-0 shadow-inner`}>
+                  <kpi.icon className={`h-6 w-6 ${kpi.color}`} />
+                </div>
               </div>
-              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <FolderOpen className="h-4 w-4 text-primary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover-elevate">
-          <CardContent className="pt-5 pb-4 px-5">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground mb-1">Clientes</p>
-                {statsLoading ? <Skeleton className="h-8 w-16" /> : (
-                  <div className="text-3xl font-bold" data-testid="text-total-clients">{stats?.totalClients ?? 0}</div>
-                )}
-                <p className="text-xs text-muted-foreground mt-1">integradores ativos</p>
-              </div>
-              <div className="h-9 w-9 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-                <Users className="h-4 w-4 text-blue-500" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover-elevate">
-          <CardContent className="pt-5 pb-4 px-5">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground mb-1">Em Andamento</p>
-                {statsLoading ? <Skeleton className="h-8 w-16" /> : (
-                  <div className="text-3xl font-bold text-amber-600 dark:text-amber-400" data-testid="text-in-progress-projects">
-                    {emAndamento}
-                  </div>
-                )}
-                <p className="text-xs text-muted-foreground mt-1">em processo ativo</p>
-              </div>
-              <div className="h-9 w-9 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
-                <Zap className="h-4 w-4 text-amber-500" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover-elevate">
-          <CardContent className="pt-5 pb-4 px-5">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground mb-1">Homologados</p>
-                {statsLoading ? <Skeleton className="h-8 w-16" /> : (
-                  <div className="text-3xl font-bold text-green-600 dark:text-green-400" data-testid="text-homologated-projects">
-                    {homologados}
-                  </div>
-                )}
-                <p className="text-xs text-muted-foreground mt-1">conexões aprovadas</p>
-              </div>
-              <div className="h-9 w-9 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0">
-                <ShieldCheck className="h-4 w-4 text-green-500" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Financial Stats */}
       {canSeeFinancial && (
-        <div className="space-y-2">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
-            <DollarSign className="h-4 w-4" /> Resumo Financeiro
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="h-6 w-1 bg-primary rounded-full" />
+            <h2 className="text-lg font-bold text-foreground tracking-tight">Fluxo Financeiro</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { key: "today" as FinancialFilter, label: "Receita Hoje", value: formatBRL(finStats?.todayTotal), icon: TrendingUp, color: "text-green-500", border: "border-green-200 dark:border-green-800", textColor: "text-green-600 dark:text-green-400" },
-              { key: "month" as FinancialFilter, label: "Receita do Mês", value: formatBRL(finStats?.monthTotal), icon: DollarSign, color: "text-blue-500", border: "border-blue-200 dark:border-blue-800", textColor: "text-blue-600 dark:text-blue-400" },
-              { key: "paid" as FinancialFilter, label: "Projetos Pagos", value: String(finStats?.paidCount ?? 0), icon: BadgeCheck, color: "text-violet-500", border: "border-violet-200 dark:border-violet-800", textColor: "text-violet-600 dark:text-violet-400" },
-              { key: "pending" as FinancialFilter, label: "A Receber", value: formatBRL(finStats?.pendingTotal), icon: Hourglass, color: "text-orange-500", border: "border-orange-200 dark:border-orange-800", textColor: "text-orange-600 dark:text-orange-400" },
+              { key: "today" as FinancialFilter, label: "Receita Hoje", value: formatBRL(finStats?.todayTotal), icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-500/5", border: "border-emerald-500/20" },
+              { key: "month" as FinancialFilter, label: "Faturamento Mês", value: formatBRL(finStats?.monthTotal), icon: DollarSign, color: "text-blue-500", bg: "bg-blue-500/5", border: "border-blue-500/20" },
+              { key: "paid" as FinancialFilter, label: "Projetos Pagos", value: String(finStats?.paidCount ?? 0), icon: BadgeCheck, color: "text-violet-500", bg: "bg-violet-500/5", border: "border-violet-500/20" },
+              { key: "pending" as FinancialFilter, label: "A Receber", value: formatBRL(finStats?.pendingTotal), icon: Hourglass, color: "text-orange-500", bg: "bg-orange-500/5", border: "border-orange-500/20" },
             ].map(item => (
               <Card
                 key={item.key}
-                className={`hover-elevate ${item.border} cursor-pointer group`}
+                className={`hover-elevate cursor-pointer border ${item.border} ${item.bg} group overflow-visible`}
                 onClick={() => setActiveFilter(item.key)}
                 data-testid={`card-fin-${item.key}`}
               >
-                <CardContent className="pt-5 pb-4 px-5">
+                <CardContent className="p-6">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="text-xs font-medium text-muted-foreground mb-1">{item.label}</p>
-                      {finLoading ? <Skeleton className="h-7 w-24" /> : (
-                        <div className={`text-2xl font-bold ${item.textColor}`}>{item.value}</div>
+                      <p className="text-sm font-bold text-muted-foreground/80 uppercase tracking-wider mb-2">{item.label}</p>
+                      {finLoading ? <Skeleton className="h-8 w-32" /> : (
+                        <div className={`text-2xl font-black tracking-tight ${item.color}`}>{item.value}</div>
                       )}
-                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                        ver projetos <ChevronRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </p>
+                      <div className="flex items-center gap-1.5 mt-3 opacity-0 group-hover:opacity-100 transition-all transform translate-x-[-10px] group-hover:translate-x-0">
+                        <span className="text-xs font-bold text-foreground">Ver detalhes</span>
+                        <ChevronRight className="h-3 w-3 text-foreground" />
+                      </div>
                     </div>
-                    <div className={`h-9 w-9 rounded-lg bg-current/10 flex items-center justify-center flex-shrink-0 opacity-20`} style={{ opacity: 0.15 }}>
-                      <item.icon className={`h-4 w-4 ${item.color}`} style={{ opacity: 1 }} />
+                    <div className={`h-11 w-11 rounded-full bg-white dark:bg-card flex items-center justify-center flex-shrink-0 shadow-sm border border-border/50`}>
+                      <item.icon className={`h-5 w-5 ${item.color}`} />
                     </div>
                   </div>
                 </CardContent>
@@ -372,237 +360,241 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Sheet: financial filter */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Recent Projects */}
+        <div className="lg:col-span-2 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="h-6 w-1 bg-primary rounded-full" />
+              <h2 className="text-lg font-bold text-foreground tracking-tight">Projetos Recentes</h2>
+            </div>
+            <Link href="/projetos">
+              <Button variant="ghost" size="sm" className="font-bold text-primary">Ver Tudo</Button>
+            </Link>
+          </div>
+          <Card className="overflow-visible">
+            <CardContent className="p-0">
+              <div className="divide-y divide-border/50 px-6">
+                {projectsLoading ? (
+                  Array(5).fill(0).map((_, i) => (
+                    <div key={i} className="py-4 flex gap-4">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="space-y-2 flex-1">
+                        <Skeleton className="h-4 w-1/3" />
+                        <Skeleton className="h-3 w-1/4" />
+                      </div>
+                    </div>
+                  ))
+                ) : recentProjects.length === 0 ? (
+                  <div className="py-20 text-center text-muted-foreground">
+                    <FolderOpen className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                    <p className="font-medium">Nenhum projeto encontrado</p>
+                  </div>
+                ) : (
+                  recentProjects.map(p => (
+                    <ProjectRow key={p.id} project={p} linkTo={`/projetos`} />
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Status Distribution */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="h-6 w-1 bg-primary rounded-full" />
+            <h2 className="text-lg font-bold text-foreground tracking-tight">Status da Operação</h2>
+          </div>
+          <Card className="overflow-visible">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Volume por Etapa</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 pt-0">
+              <div className="h-[280px] w-full mt-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={barData} layout="vertical" margin={{ left: -20, right: 20 }}>
+                    <XAxis type="number" hide />
+                    <YAxis 
+                      dataKey="name" 
+                      type="category" 
+                      tick={{ fontSize: 10, fontWeight: 600 }} 
+                      width={100}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip 
+                      cursor={{ fill: 'transparent' }}
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          return (
+                            <div className="bg-popover border border-border px-3 py-2 rounded-lg shadow-xl animate-in zoom-in-95">
+                              <p className="text-xs font-bold text-popover-foreground uppercase tracking-tight mb-1">{data.name}</p>
+                              <p className="text-lg font-black" style={{ color: data.color }}>{data.value} projetos</p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={24}>
+                      {barData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} fillOpacity={0.8} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="mt-6 space-y-2">
+                {barData.slice(0, 4).map((d, i) => (
+                  <div key={i} className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full" style={{ backgroundColor: d.color }} />
+                      <span className="font-semibold text-muted-foreground uppercase tracking-tighter">{d.name}</span>
+                    </div>
+                    <span className="font-black text-foreground">{d.value}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Fluxo de Homologação — Stepper Visual */}
+      <div className="space-y-4 pt-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="h-6 w-1 bg-primary rounded-full" />
+            <h2 className="text-lg font-bold text-foreground tracking-tight">Fluxo de Homologação</h2>
+          </div>
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Etapas do Processo</p>
+        </div>
+        <Card className="overflow-visible border-none bg-transparent shadow-none">
+          <CardContent className="p-0">
+            <div className="flex items-center gap-2 overflow-x-auto pb-6 pt-2 scrollbar-hide no-scrollbar -mx-2 px-2">
+              {STATUS_ORDER.filter(s => s !== "cancelado").map((status, i) => {
+                const count = stats?.byStatus?.[status] ?? 0;
+                const Icon = STATUS_ICONS[status] || Clock;
+                const isClickable = count > 0;
+                return (
+                  <div key={status} className="flex items-center flex-shrink-0 group">
+                    <button
+                      onClick={() => isClickable && setActiveStatus(status)}
+                      className={`relative flex flex-col items-center gap-3 px-4 py-6 rounded-2xl border transition-all duration-300 w-[120px] shadow-sm ${
+                        isClickable
+                          ? "bg-card border-border hover:border-primary hover:shadow-lg hover:-translate-y-1 cursor-pointer"
+                          : "bg-card/40 border-border/40 cursor-default opacity-40 grayscale"
+                      }`}
+                      disabled={!isClickable}
+                      data-testid={`flow-step-${status}`}
+                    >
+                      <div className="absolute top-2 right-2 text-[10px] font-black opacity-10 select-none">0{i+1}</div>
+                      <div
+                        className="h-12 w-12 rounded-full flex items-center justify-center transition-all shadow-inner"
+                        style={{ backgroundColor: `${STATUS_COLORS[status]}15` }}
+                      >
+                        <Icon className="h-6 w-6" style={{ color: STATUS_COLORS[status] }} />
+                      </div>
+                      <div className="space-y-1 text-center">
+                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-tighter leading-tight line-clamp-2 px-1">{STATUS_LABELS[status]}</p>
+                        <p className="text-2xl font-black tracking-tighter" style={{ color: count > 0 ? STATUS_COLORS[status] : undefined }}>{count}</p>
+                      </div>
+                    </button>
+                    {i < STATUS_ORDER.filter(s => s !== "cancelado").length - 1 && (
+                      <div className="w-6 h-px bg-border/50 mx-[-4px] relative z-[-1]" />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Sheets remain same for functionality */}
       <Sheet open={!!activeFilter} onOpenChange={(o) => { if (!o) setActiveFilter(null); }}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
-          <SheetHeader className="mb-4">
-            <SheetTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-primary" />
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto border-l-4 border-l-primary">
+          <SheetHeader className="mb-6">
+            <SheetTitle className="flex items-center gap-3 text-2xl font-black tracking-tight">
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <DollarSign className="h-6 w-6 text-primary" />
+                </div>
+              </div>
               {activeFilter ? FILTER_LABELS[activeFilter] : ""}
             </SheetTitle>
           </SheetHeader>
           {filterLoading ? (
-            <div className="space-y-3">
-              {Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
+            <div className="space-y-4">
+              {Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-20 w-full rounded-xl" />)}
             </div>
           ) : filterProjects.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-              <FolderOpen className="h-10 w-10 mb-2 opacity-40" />
-              <p className="text-sm">Nenhum projeto encontrado</p>
+            <div className="flex flex-col items-center justify-center py-32 text-muted-foreground bg-muted/20 rounded-2xl border-2 border-dashed">
+              <FolderOpen className="h-16 w-16 mb-4 opacity-10" />
+              <p className="font-bold text-lg uppercase tracking-tighter opacity-40">Nenhum projeto encontrado</p>
             </div>
           ) : (
-            <div>
-              <p className="text-sm text-muted-foreground mb-3">
-                {filterProjects.length} projeto{filterProjects.length !== 1 ? "s" : ""} · Total:{" "}
-                <span className="font-semibold text-foreground">
-                  {formatBRL(filterProjects.reduce((s, p) => {
-                    const v = p.valor ? parseFloat(String(p.valor).replace(/[^0-9.,]/g, "").replace(",", ".")) || 0 : 0;
-                    return s + v;
-                  }, 0))}
-                </span>
-              </p>
-              {filterProjects.map(p => <ProjectRow key={p.id} project={p} />)}
+            <div className="space-y-6">
+              <div className="bg-primary/5 rounded-xl p-5 border border-primary/10">
+                <p className="text-xs font-bold text-primary uppercase tracking-widest mb-1">Resumo da Seleção</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-black tracking-tight text-foreground">
+                    {formatBRL(filterProjects.reduce((s, p) => {
+                      const v = p.valor ? parseFloat(String(p.valor).replace(/[^0-9.,]/g, "").replace(",", ".")) || 0 : 0;
+                      return s + v;
+                    }, 0))}
+                  </span>
+                  <span className="text-sm font-semibold text-muted-foreground">({filterProjects.length} projeto{filterProjects.length !== 1 ? "s" : ""})</span>
+                </div>
+              </div>
+              <div className="divide-y divide-border/50">
+                {filterProjects.map(p => <ProjectRow key={p.id} project={p} />)}
+              </div>
             </div>
           )}
         </SheetContent>
       </Sheet>
 
-      {/* Sheet: projects by status */}
       <Sheet open={!!activeStatus} onOpenChange={(o) => { if (!o) setActiveStatus(null); }}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
-          <SheetHeader className="mb-4">
-            <SheetTitle className="flex items-center gap-2">
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto border-l-4" style={{ borderLeftColor: activeStatus ? STATUS_COLORS[activeStatus] : undefined }}>
+          <SheetHeader className="mb-6">
+            <SheetTitle className="flex items-center gap-3 text-2xl font-black tracking-tight">
               {activeStatus && (() => {
                 const Icon = STATUS_ICONS[activeStatus] || Clock;
-                return <Icon className="h-5 w-5" style={{ color: STATUS_COLORS[activeStatus] }} />;
+                return (
+                  <div className="h-10 w-10 rounded-full flex items-center justify-center shadow-inner" style={{ backgroundColor: `${STATUS_COLORS[activeStatus]}15` }}>
+                    <Icon className="h-6 w-6" style={{ color: STATUS_COLORS[activeStatus] }} />
+                  </div>
+                );
               })()}
               {activeStatus ? STATUS_LABELS[activeStatus] : ""}
             </SheetTitle>
           </SheetHeader>
           {projectsByStatus.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-              <FolderOpen className="h-10 w-10 mb-2 opacity-40" />
-              <p className="text-sm">Nenhum projeto neste status</p>
+            <div className="flex flex-col items-center justify-center py-32 text-muted-foreground bg-muted/20 rounded-2xl border-2 border-dashed">
+              <FolderOpen className="h-16 w-16 mb-4 opacity-10" />
+              <p className="font-bold text-lg uppercase tracking-tighter opacity-40">Nenhum projeto neste status</p>
             </div>
           ) : (
-            <div>
-              <p className="text-sm text-muted-foreground mb-3">
-                {projectsByStatus.length} projeto{projectsByStatus.length !== 1 ? "s" : ""} em{" "}
-                <span className="font-semibold" style={{ color: activeStatus ? STATUS_COLORS[activeStatus] : undefined }}>
-                  {activeStatus ? STATUS_LABELS[activeStatus] : ""}
-                </span>
-              </p>
-              {projectsByStatus.map(p => (
-                <ProjectRow key={p.id} project={p} linkTo={`/projetos`} />
-              ))}
+            <div className="space-y-6">
+              <div className="rounded-xl p-5 border" style={{ backgroundColor: activeStatus ? `${STATUS_COLORS[activeStatus]}05` : undefined, borderColor: activeStatus ? `${STATUS_COLORS[activeStatus]}15` : undefined }}>
+                <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: activeStatus ? STATUS_COLORS[activeStatus] : undefined }}>Status Atual</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-black tracking-tight text-foreground">{projectsByStatus.length}</span>
+                  <span className="text-sm font-semibold text-muted-foreground">projeto{projectsByStatus.length !== 1 ? "s" : ""} em {activeStatus ? STATUS_LABELS[activeStatus] : ""}</span>
+                </div>
+              </div>
+              <div className="divide-y divide-border/50">
+                {projectsByStatus.map(p => (
+                  <ProjectRow key={p.id} project={p} linkTo={`/projetos`} />
+                ))}
+              </div>
             </div>
           )}
         </SheetContent>
       </Sheet>
-
-      {/* Fluxo de Homologação — clicável */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Fluxo de Homologação</CardTitle>
-            <p className="text-xs text-muted-foreground">Clique em uma etapa para ver os projetos</p>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2 items-center">
-            {STATUS_ORDER.filter(s => s !== "cancelado").map((status, i, arr) => {
-              const count = stats?.byStatus?.[status] ?? 0;
-              const Icon = STATUS_ICONS[status] || Clock;
-              const isClickable = count > 0;
-              return (
-                <div key={status} className="flex items-center gap-2">
-                  <button
-                    onClick={() => isClickable && setActiveStatus(status)}
-                    className={`flex flex-col items-center gap-1.5 px-3 py-2.5 rounded-lg border min-w-[88px] transition-all ${
-                      isClickable
-                        ? "border-border bg-card hover:shadow-md hover:-translate-y-0.5 cursor-pointer hover:border-primary/30"
-                        : "border-border/40 bg-card/50 cursor-default opacity-50"
-                    }`}
-                    disabled={!isClickable}
-                    data-testid={`flow-step-${status}`}
-                  >
-                    <div
-                      className="h-8 w-8 rounded-full flex items-center justify-center transition-all"
-                      style={{ backgroundColor: `${STATUS_COLORS[status]}20` }}
-                    >
-                      <Icon className="h-4 w-4" style={{ color: STATUS_COLORS[status] }} />
-                    </div>
-                    <span className="text-xs font-medium text-center leading-tight">{STATUS_LABELS[status]}</span>
-                    {statsLoading ? (
-                      <Skeleton className="h-5 w-8 rounded" />
-                    ) : (
-                      <span
-                        className="text-lg font-bold flex items-center gap-1"
-                        style={{ color: count > 0 ? STATUS_COLORS[status] : undefined }}
-                      >
-                        {count}
-                        {isClickable && <ChevronRight className="h-3 w-3 opacity-0 group-hover:opacity-100" />}
-                      </span>
-                    )}
-                  </button>
-                  {i < arr.length - 1 && (
-                    <div className="text-muted-foreground/40 text-lg font-light hidden sm:block">›</div>
-                  )}
-                </div>
-              );
-            })}
-
-            {/* Cancelados separados */}
-            {(stats?.byStatus?.cancelado ?? 0) > 0 && (
-              <>
-                <div className="hidden sm:flex items-center px-2 text-muted-foreground/30">·</div>
-                <button
-                  onClick={() => setActiveStatus("cancelado")}
-                  className="flex flex-col items-center gap-1.5 px-3 py-2.5 rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/10 min-w-[88px] hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
-                  data-testid="flow-step-cancelado"
-                >
-                  <div className="h-8 w-8 rounded-full flex items-center justify-center" style={{ backgroundColor: `${STATUS_COLORS.cancelado}20` }}>
-                    <XCircle className="h-4 w-4" style={{ color: STATUS_COLORS.cancelado }} />
-                  </div>
-                  <span className="text-xs font-medium text-center leading-tight">Cancelado</span>
-                  <span className="text-lg font-bold" style={{ color: STATUS_COLORS.cancelado }}>
-                    {stats?.byStatus?.cancelado ?? 0}
-                  </span>
-                </button>
-              </>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Bar Chart */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Distribuição por Status</CardTitle>
-            <p className="text-xs text-muted-foreground">Clique nas barras para ver os projetos</p>
-          </CardHeader>
-          <CardContent>
-            {statsLoading ? (
-              <div className="space-y-2 py-4">
-                {Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-6 w-full" />)}
-              </div>
-            ) : barData.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
-                <FolderOpen className="h-12 w-12 mb-3 opacity-40" />
-                <p className="text-sm">Nenhum projeto ainda</p>
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height={240}>
-                <BarChart
-                  data={barData}
-                  layout="vertical"
-                  margin={{ top: 0, right: 16, bottom: 0, left: 0 }}
-                  onClick={(d) => {
-                    if (d?.activePayload?.[0]?.payload?.status) {
-                      setActiveStatus(d.activePayload[0].payload.status);
-                    }
-                  }}
-                  style={{ cursor: "pointer" }}
-                >
-                  <XAxis type="number" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    tick={{ fontSize: 10 }}
-                    tickLine={false}
-                    axisLine={false}
-                    width={90}
-                  />
-                  <Tooltip
-                    formatter={(v: number) => [v, "projetos"]}
-                    contentStyle={{ fontSize: 12, borderRadius: 6 }}
-                    cursor={{ fill: "hsl(var(--muted))", opacity: 0.5 }}
-                  />
-                  <Bar dataKey="value" radius={[0, 4, 4, 0]} maxBarSize={18}>
-                    {barData.map((entry, i) => (
-                      <Cell key={i} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Projetos Recentes */}
-        <Card>
-          <CardHeader className="pb-2 flex flex-row items-center justify-between">
-            <CardTitle className="text-base">Projetos Recentes</CardTitle>
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/projetos">
-                Ver todos <ChevronRight className="h-3.5 w-3.5 ml-1" />
-              </Link>
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {projectsLoading ? (
-              <div className="space-y-3">
-                {Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
-              </div>
-            ) : recentProjects.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
-                <FolderOpen className="h-10 w-10 mb-2 opacity-40" />
-                <p className="text-sm">Nenhum projeto cadastrado</p>
-                <Button asChild className="mt-4" size="sm" variant="outline">
-                  <Link href="/clientes">Cadastrar primeiro projeto</Link>
-                </Button>
-              </div>
-            ) : (
-              <div>
-                {recentProjects.map((project) => (
-                  <ProjectRow key={project.id} project={project} linkTo="/projetos" />
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }

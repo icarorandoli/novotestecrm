@@ -1,12 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   DollarSign, TrendingUp, BadgeCheck, Hourglass, FileDown,
-  CalendarDays, CheckCircle2,
+  CalendarDays, CheckCircle2, ArrowUpRight, Filter, Download,
+  LayoutDashboard, PieChart as PieChartIcon
 } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import type { Project, Client } from "@shared/schema";
 import { STATUS_LABELS, STATUS_BADGE_STYLES } from "./dashboard";
 
@@ -78,162 +80,250 @@ export default function RelatoriosPage() {
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground" data-testid="text-page-title">Relatórios Financeiros</h1>
-        <p className="text-muted-foreground text-sm mt-1">Visão completa de recebimentos e pendências</p>
+    <div className="p-6 space-y-8 max-w-7xl mx-auto pb-20">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <LayoutDashboard className="h-6 w-6 text-primary" />
+            <h1 className="text-2xl font-bold tracking-tight text-foreground" data-testid="text-page-title">Relatórios Financeiros</h1>
+          </div>
+          <p className="text-muted-foreground">Monitoramento de fluxo de caixa e projetos liquidados</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" size="sm" className="hover-elevate">
+            <Filter className="h-4 w-4 mr-2" /> Filtrar
+          </Button>
+          <Button variant="outline" size="sm" className="hover-elevate">
+            <Download className="h-4 w-4 mr-2" /> Exportar PDF
+          </Button>
+        </div>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border-green-200 dark:border-green-800">
-          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Receita Hoje</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            {finLoading ? <Skeleton className="h-8 w-24" /> : (
-              <div className="text-2xl font-bold text-green-600 dark:text-green-400">{formatBRL(finStats?.todayTotal)}</div>
-            )}
-            <p className="text-xs text-muted-foreground mt-1">pagamentos do dia</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-blue-200 dark:border-blue-800">
-          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Receita do Mês</CardTitle>
-            <DollarSign className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            {finLoading ? <Skeleton className="h-8 w-24" /> : (
-              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{formatBRL(finStats?.monthTotal)}</div>
-            )}
-            <p className="text-xs text-muted-foreground mt-1">faturamento no mês atual</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-violet-200 dark:border-violet-800">
-          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Recebido</CardTitle>
-            <BadgeCheck className="h-4 w-4 text-violet-500" />
-          </CardHeader>
-          <CardContent>
-            {paidLoading ? <Skeleton className="h-8 w-24" /> : (
-              <div className="text-2xl font-bold text-violet-600 dark:text-violet-400">
-                {formatBRL(paidProjects.reduce((s, p) => s + parseValor(p.valor), 0))}
+        <Card className="hover-elevate transition-all border-emerald-500/20 shadow-sm overflow-hidden group">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Receita Hoje</p>
+                {finLoading ? <Skeleton className="h-9 w-24 mt-1" /> : (
+                  <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 tracking-tight" data-testid="text-today-revenue">
+                    {formatBRL(finStats?.todayTotal)}
+                  </p>
+                )}
+                <div className="flex items-center gap-1 mt-2">
+                  <span className="flex items-center text-xs font-medium text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                    <ArrowUpRight className="h-3 w-3 mr-0.5" /> 100%
+                  </span>
+                </div>
               </div>
-            )}
-            <p className="text-xs text-muted-foreground mt-1">{paidProjects.length} projetos pagos</p>
+              <div className="h-12 w-12 bg-emerald-500/10 rounded-xl flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                <TrendingUp className="h-6 w-6 text-emerald-600 group-hover:text-white" />
+              </div>
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="border-orange-200 dark:border-orange-800">
-          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">A Receber</CardTitle>
-            <Hourglass className="h-4 w-4 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            {finLoading ? <Skeleton className="h-8 w-24" /> : (
-              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{formatBRL(finStats?.pendingTotal)}</div>
-            )}
-            <p className="text-xs text-muted-foreground mt-1">{pendingProjects.length} projetos pendentes</p>
+        <Card className="hover-elevate transition-all border-blue-500/20 shadow-sm overflow-hidden group">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Faturamento Mês</p>
+                {finLoading ? <Skeleton className="h-9 w-24 mt-1" /> : (
+                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 tracking-tight" data-testid="text-month-revenue">
+                    {formatBRL(finStats?.monthTotal)}
+                  </p>
+                )}
+                <p className="text-[10px] text-muted-foreground mt-2">Período: {new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</p>
+              </div>
+              <div className="h-12 w-12 bg-blue-500/10 rounded-xl flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-colors">
+                <DollarSign className="h-6 w-6 text-blue-600 group-hover:text-white" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="hover-elevate transition-all border-violet-500/20 shadow-sm overflow-hidden group">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Total Liquidado</p>
+                {paidLoading ? <Skeleton className="h-9 w-24 mt-1" /> : (
+                  <p className="text-2xl font-bold text-violet-600 dark:text-violet-400 tracking-tight" data-testid="text-paid-revenue">
+                    {formatBRL(paidProjects.reduce((s, p) => s + parseValor(p.valor), 0))}
+                  </p>
+                )}
+                <p className="text-[10px] text-muted-foreground mt-2">{paidProjects.length} projetos concluídos</p>
+              </div>
+              <div className="h-12 w-12 bg-violet-500/10 rounded-xl flex items-center justify-center group-hover:bg-violet-500 group-hover:text-white transition-colors">
+                <BadgeCheck className="h-6 w-6 text-violet-600 group-hover:text-white" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="hover-elevate transition-all border-orange-500/20 shadow-sm overflow-hidden group">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Pendente/Aguardando</p>
+                {finLoading ? <Skeleton className="h-9 w-24 mt-1" /> : (
+                  <p className="text-2xl font-bold text-orange-600 dark:text-orange-400 tracking-tight" data-testid="text-pending-revenue">
+                    {formatBRL(finStats?.pendingTotal)}
+                  </p>
+                )}
+                <p className="text-[10px] text-muted-foreground mt-2">{pendingProjects.length} faturas em aberto</p>
+              </div>
+              <div className="h-12 w-12 bg-orange-500/10 rounded-xl flex items-center justify-center group-hover:bg-orange-500 group-hover:text-white transition-colors">
+                <Hourglass className="h-6 w-6 text-orange-600 group-hover:text-white" />
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Monthly Chart */}
-      {chartData.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <CalendarDays className="h-4 w-4 text-primary" /> Receita por Mês
-            </CardTitle>
+      {/* Monthly Chart and Table row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2 border-muted/40 shadow-md">
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <CardTitle className="text-base font-bold flex items-center gap-2">
+                  <CalendarDays className="h-4 w-4 text-primary" /> Histórico de Recebimentos
+                </CardTitle>
+                <CardDescription>Visualização mensal de faturamento liquidado</CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={240}>
-              <BarChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="mes" tick={{ fontSize: 12 }} />
-                <YAxis tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 12 }} />
-                <Tooltip formatter={(v: number) => [formatBRL(v), "Receita"]} />
-                <Bar dataKey="receita" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {chartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={chartData} margin={{ top: 0, right: 0, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted/30" />
+                  <XAxis 
+                    dataKey="mes" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                    dy={10}
+                  />
+                  <YAxis 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                    tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip 
+                    cursor={{ fill: 'hsl(var(--primary) / 0.05)' }}
+                    contentStyle={{ 
+                      backgroundColor: "hsl(var(--background))", 
+                      borderColor: "hsl(var(--border))",
+                      borderRadius: "12px",
+                      boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
+                      fontSize: "12px"
+                    }}
+                    formatter={(v: number) => [formatBRL(v), "Receita"]} 
+                  />
+                  <Bar dataKey="receita" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]}>
+                    {chartData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fillOpacity={0.8} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20 text-center bg-muted/20 rounded-xl border-2 border-dashed border-muted">
+                <CalendarDays className="h-10 w-10 text-muted-foreground/30 mb-2" />
+                <p className="text-sm text-muted-foreground font-medium">Nenhum dado financeiro para exibir o gráfico</p>
+              </div>
+            )}
           </CardContent>
         </Card>
-      )}
 
-      {/* Monthly breakdown table */}
-      {sortedMonths.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
+        <Card className="border-muted/40 shadow-md flex flex-col">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base font-bold flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-primary" /> Resumo Mensal
             </CardTitle>
+            <CardDescription>Tabela comparativa de faturamento</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left py-2 pr-4 text-muted-foreground font-medium">Mês</th>
-                    <th className="text-right py-2 pr-4 text-muted-foreground font-medium">Projetos Pagos</th>
-                    <th className="text-right py-2 text-muted-foreground font-medium">Receita</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[...sortedMonths].reverse().map(key => (
-                    <tr key={key} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                      <td className="py-2.5 pr-4 font-medium capitalize">
+          <CardContent className="flex-1 overflow-auto">
+            {sortedMonths.length > 0 ? (
+              <div className="space-y-0 divide-y divide-border">
+                {[...sortedMonths].reverse().map(key => (
+                  <div key={key} className="flex items-center justify-between py-3 hover:bg-muted/30 transition-colors px-2 rounded-lg -mx-2">
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-bold capitalize">
                         {new Date(key + "-01").toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}
-                      </td>
-                      <td className="py-2.5 pr-4 text-right text-muted-foreground">{monthlyCount[key] || 0}</td>
-                      <td className="py-2.5 text-right font-semibold text-green-600 dark:text-green-400">
-                        {formatBRL(monthlyMap[key])}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      </p>
+                      <p className="text-xs text-muted-foreground">{monthlyCount[key] || 0} faturas quitadas</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{formatBRL(monthlyMap[key])}</p>
+                      <div className="flex items-center justify-end text-[10px] text-muted-foreground font-medium bg-muted px-1.5 py-0.5 rounded mt-1">
+                        Pago
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full py-10 text-center">
+                <p className="text-sm text-muted-foreground font-medium">Sem faturas liquidadas</p>
+              </div>
+            )}
           </CardContent>
         </Card>
-      )}
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Projetos Pagos */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-green-500" /> Projetos Pagos
+        <Card className="border-muted/40 shadow-md">
+          <CardHeader className="pb-4 border-b border-border/60">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <CardTitle className="text-base font-bold flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="h-5 w-5" /> Recebimentos Recentes
+                </CardTitle>
+                <CardDescription>Últimos projetos com pagamento confirmado</CardDescription>
+              </div>
               {!paidLoading && (
-                <span className="ml-auto text-xs font-normal text-muted-foreground">
-                  {paidProjects.length} projetos
-                </span>
+                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 font-bold">
+                  {paidProjects.length} total
+                </Badge>
               )}
-            </CardTitle>
+            </div>
           </CardHeader>
-          <CardContent className="max-h-96 overflow-y-auto">
+          <CardContent className="p-0 max-h-[400px] overflow-y-auto">
             {paidLoading ? (
-              <div className="space-y-3">{Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
+              <div className="p-6 space-y-4">{Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}</div>
             ) : paidProjects.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">Nenhum projeto pago</p>
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <CheckCircle2 className="h-10 w-10 text-muted-foreground/20 mb-2" />
+                <p className="text-sm text-muted-foreground">Nenhum registro encontrado</p>
+              </div>
             ) : (
-              <div className="space-y-0">
+              <div className="divide-y divide-border/60">
                 {paidProjects.map(p => (
-                  <div key={p.id} className="flex items-start gap-3 py-3 border-b border-border/50 last:border-0" data-testid={`row-paid-${p.id}`}>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{p.title}</p>
-                      <p className="text-xs text-muted-foreground truncate">{p.client?.name || "—"}</p>
-                      {p.updatedAt && (
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(p.updatedAt).toLocaleDateString("pt-BR")}
-                        </p>
-                      )}
+                  <div key={p.id} className="flex items-center gap-4 p-4 hover:bg-muted/10 transition-colors group" data-testid={`row-paid-${p.id}`}>
+                    <div className="h-10 w-10 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0 group-hover:bg-emerald-500 transition-colors">
+                      <CheckCircle2 className="h-5 w-5 text-emerald-600 group-hover:text-white" />
                     </div>
-                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                      {p.valor && <span className="text-sm font-semibold text-green-600 dark:text-green-400">{formatBRL(p.valor)}</span>}
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE_STYLES[p.status]}`}>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold truncate group-hover:text-primary transition-colors">{p.title}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-xs text-muted-foreground truncate font-medium">{p.client?.name || "—"}</p>
+                        <span className="text-[10px] text-muted-foreground/40">•</span>
+                        {p.updatedAt && (
+                          <p className="text-xs text-muted-foreground font-medium">
+                            {new Date(p.updatedAt).toLocaleDateString("pt-BR")}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                      {p.valor && <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 tracking-tight">{formatBRL(p.valor)}</span>}
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${STATUS_BADGE_STYLES[p.status]}`}>
                         {STATUS_LABELS[p.status] || p.status}
                       </span>
                     </div>
@@ -245,33 +335,44 @@ export default function RelatoriosPage() {
         </Card>
 
         {/* A Receber */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Hourglass className="h-4 w-4 text-orange-500" /> A Receber
+        <Card className="border-muted/40 shadow-md">
+          <CardHeader className="pb-4 border-b border-border/60">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <CardTitle className="text-base font-bold flex items-center gap-2 text-orange-600 dark:text-orange-400">
+                  <Hourglass className="h-5 w-5" /> Cobranças Pendentes
+                </CardTitle>
+                <CardDescription>Aguardando confirmação ou em processamento</CardDescription>
+              </div>
               {!pendingLoading && (
-                <span className="ml-auto text-xs font-normal text-muted-foreground">
-                  {pendingProjects.length} projetos
-                </span>
+                <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/20 font-bold">
+                  {pendingProjects.length} total
+                </Badge>
               )}
-            </CardTitle>
+            </div>
           </CardHeader>
-          <CardContent className="max-h-96 overflow-y-auto">
+          <CardContent className="p-0 max-h-[400px] overflow-y-auto">
             {pendingLoading ? (
-              <div className="space-y-3">{Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
+              <div className="p-6 space-y-4">{Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}</div>
             ) : pendingProjects.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">Nenhum pagamento pendente</p>
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <Hourglass className="h-10 w-10 text-muted-foreground/20 mb-2" />
+                <p className="text-sm text-muted-foreground">Nenhum pagamento pendente</p>
+              </div>
             ) : (
-              <div className="space-y-0">
+              <div className="divide-y divide-border/60">
                 {pendingProjects.map(p => (
-                  <div key={p.id} className="flex items-start gap-3 py-3 border-b border-border/50 last:border-0" data-testid={`row-pending-${p.id}`}>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{p.title}</p>
-                      <p className="text-xs text-muted-foreground truncate">{p.client?.name || "—"}</p>
+                  <div key={p.id} className="flex items-center gap-4 p-4 hover:bg-muted/10 transition-colors group" data-testid={`row-pending-${p.id}`}>
+                    <div className="h-10 w-10 rounded-full bg-orange-500/10 flex items-center justify-center shrink-0 group-hover:bg-orange-500 transition-colors">
+                      <Hourglass className="h-5 w-5 text-orange-600 group-hover:text-white" />
                     </div>
-                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                      {p.valor && <span className="text-sm font-semibold text-orange-600 dark:text-orange-400">{formatBRL(p.valor)}</span>}
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE_STYLES[p.status]}`}>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold truncate group-hover:text-primary transition-colors">{p.title}</p>
+                      <p className="text-xs text-muted-foreground truncate font-medium mt-0.5">{p.client?.name || "—"}</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                      {p.valor && <span className="text-sm font-bold text-orange-600 dark:text-orange-400 tracking-tight">{formatBRL(p.valor)}</span>}
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${STATUS_BADGE_STYLES[p.status]}`}>
                         {STATUS_LABELS[p.status] || p.status}
                       </span>
                     </div>
