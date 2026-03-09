@@ -15,12 +15,13 @@ import { Label } from "@/components/ui/label";
 import {
   ArrowLeft, Upload, FileText, Trash2, Activity,
   MapPin, Hash, Zap, Cpu, Sun, User, ExternalLink, Building, DollarSign, AlertCircle, CreditCard, Loader2,
-  QrCode, Copy, Check
+  QrCode, Copy, Check, Lock
 } from "lucide-react";
 import { Link } from "wouter";
-import type { Project, Client, Document, Timeline } from "@shared/schema";
+import type { Project, Client, Document, Timeline, StatusConfig } from "@shared/schema";
 import ChatPanel from "@/components/chat-panel";
 import { useProjectWebSocket } from "@/hooks/use-websocket";
+import { STATUS_COLOR_PRESETS, DEFAULT_STATUS_CONFIGS } from "@/lib/status-colors";
 
 const STATUS_LABELS: Record<string, string> = {
   orcamento: "Orçamento",
@@ -525,6 +526,10 @@ export default function PortalProjetoPage() {
     },
   });
 
+  const { data: statusConfigsRaw = [] } = useQuery<StatusConfig[]>({
+    queryKey: ["/api/status-configs"],
+  });
+
   const deleteDocMut = useMutation({
     mutationFn: (docId: string) => apiRequest("DELETE", `/api/projects/${id}/documents/${docId}`),
     onSuccess: () => {
@@ -533,8 +538,13 @@ export default function PortalProjetoPage() {
     },
   });
 
-  const STATUS_ORDER = ["orcamento", "aprovado_pagamento_pendente", "projeto_tecnico", "aguardando_art", "protocolado", "parecer_acesso", "instalacao", "vistoria", "projeto_aprovado", "homologado", "finalizado"];
-  const currentIdx = project ? STATUS_ORDER.indexOf(project.status) : -1;
+  // Use status configs from DB (same as Kanban), sorted by sortOrder
+  // Fall back to DEFAULT_STATUS_CONFIGS while loading
+  const statusSteps = (statusConfigsRaw.length > 0 ? statusConfigsRaw : DEFAULT_STATUS_CONFIGS as any[])
+    .filter((c: { key: string }) => c.key !== "cancelado")
+    .sort((a: { sortOrder: number }, b: { sortOrder: number }) => a.sortOrder - b.sortOrder) as Array<{ key: string; label: string; color: string; sortOrder: number }>;
+
+  const currentIdx = project ? statusSteps.findIndex(s => s.key === project.status) : -1;
 
   if (isLoading) {
     return (
@@ -583,41 +593,42 @@ export default function PortalProjetoPage() {
         </div>
       </div>
 
-      {/* Stepper Status Horizontal */}
+      {/* Stepper Status Horizontal — sincronizado com o Kanban */}
       <Card className="border-border/40 shadow-xl shadow-black/5 overflow-hidden rounded-[2.5rem]">
         <CardContent className="p-8 md:p-12">
           <div className="relative">
             {/* Connection Line */}
             <div className="absolute top-6 left-0 w-full h-0.5 bg-muted z-0 hidden md:block" />
-            <div 
-              className="absolute top-6 left-0 h-0.5 bg-primary z-0 transition-all duration-1000 hidden md:block" 
-              style={{ width: `${(currentIdx / (STATUS_ORDER.length - 1)) * 100}%` }}
+            <div
+              className="absolute top-6 left-0 h-0.5 bg-primary z-0 transition-all duration-1000 hidden md:block"
+              style={{ width: `${currentIdx >= 0 ? (currentIdx / Math.max(statusSteps.length - 1, 1)) * 100 : 0}%` }}
             />
-            
+
             <div className="relative z-10 flex justify-between gap-4 overflow-x-auto pb-4 no-scrollbar">
-              {STATUS_ORDER.map((step, idx) => {
+              {statusSteps.map((step, idx) => {
                 const isCompleted = idx < currentIdx;
                 const isCurrent = idx === currentIdx;
                 const isPast = idx <= currentIdx;
-                
+                const colorHex = STATUS_COLOR_PRESETS[step.color]?.hex ?? "#94a3b8";
+
                 return (
-                  <div key={step} className="flex flex-col items-center gap-3 min-w-[80px]">
-                    <div 
+                  <div key={step.key} className="flex flex-col items-center gap-3 min-w-[80px]">
+                    <div
                       className={`h-12 w-12 rounded-2xl flex items-center justify-center border-4 transition-all duration-500 ${
-                        isCurrent 
-                          ? "bg-primary border-primary shadow-lg shadow-primary/30 scale-110 z-10" 
-                          : isCompleted 
-                            ? "bg-primary border-primary text-white" 
+                        isCurrent
+                          ? "shadow-lg scale-110 z-10"
+                          : isCompleted
+                            ? "text-white"
                             : "bg-muted border-muted text-muted-foreground"
                       }`}
                       style={
-                        (isCurrent || isCompleted)
-                          ? { backgroundColor: STATUS_COLORS[step], borderColor: STATUS_COLORS[step] }
+                        isCurrent || isCompleted
+                          ? { backgroundColor: colorHex, borderColor: colorHex }
                           : undefined
                       }
                     >
                       {isCompleted ? (
-                        <Check className="h-6 w-6 stroke-[3]" />
+                        <Check className="h-6 w-6 stroke-[3] text-white" />
                       ) : (
                         <span className={`text-sm font-black ${isCurrent ? "text-white" : ""}`}>
                           {String(idx + 1).padStart(2, "0")}
@@ -625,7 +636,7 @@ export default function PortalProjetoPage() {
                       )}
                     </div>
                     <span className={`text-[10px] font-black uppercase tracking-widest text-center max-w-[100px] leading-tight ${isCurrent ? "text-primary" : isPast ? "text-foreground" : "text-muted-foreground"}`}>
-                      {STATUS_LABELS[step]}
+                      {step.label}
                     </span>
                   </div>
                 );
@@ -767,7 +778,7 @@ export default function PortalProjetoPage() {
               </CardContent>
             </Card>
 
-            <ChatPanel projectId={id!} />
+            <ChatPanel projectId={id!} currentUserId={user?.id ?? ""} currentUserRole={user?.role ?? "integrador"} />
           </div>
         </div>
 
