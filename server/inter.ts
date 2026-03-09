@@ -346,30 +346,29 @@ async function createBolepix(
   const digits = pagadorCpfCnpj.replace(/\D/g, "");
   const tipoPessoa = digits.length <= 11 ? "FISICA" : "JURIDICA";
 
-  // Address fields are required by Inter API (non-null)
-  const endereco = pagadorAddress?.endereco || "Nao informado";
-  const numero = pagadorAddress?.numero || "SN";
-  const bairro = pagadorAddress?.bairro || "Centro";
-  const cidade = pagadorAddress?.cidade || "Nao informado";
-  const uf = pagadorAddress?.uf || "SP";
-  const cep = (pagadorAddress?.cep || "00000000").replace(/\D/g, "").padEnd(8, "0").slice(0, 8);
+  // Build pagador — only include address fields when we have real data
+  // (Inter rejects explicit null values, but accepts absent keys)
+  const pagador: Record<string, any> = {
+    cpfCnpj: digits,
+    tipoPessoa,
+    nome: pagadorNome.slice(0, 100),
+  };
+  if (pagadorAddress?.endereco) pagador.endereco = pagadorAddress.endereco.slice(0, 90);
+  if (pagadorAddress?.numero) pagador.numero = pagadorAddress.numero.slice(0, 10);
+  if (pagadorAddress?.bairro) pagador.bairro = pagadorAddress.bairro.slice(0, 60);
+  if (pagadorAddress?.cidade) pagador.cidade = pagadorAddress.cidade.slice(0, 60);
+  if (pagadorAddress?.uf) pagador.uf = pagadorAddress.uf.slice(0, 2).toUpperCase();
+  if (pagadorAddress?.cep) {
+    const cepDigits = pagadorAddress.cep.replace(/\D/g, "");
+    if (cepDigits.length === 8) pagador.cep = cepDigits;
+  }
 
   const cobBody = JSON.stringify({
     seuNumero,
     valorNominal: numericValue,
     dataVencimento: futureDateISO(30),
     numDiasAgenda: 60,
-    pagador: {
-      cpfCnpj: digits,
-      tipoPessoa,
-      nome: pagadorNome.slice(0, 100),
-      endereco,
-      numero,
-      bairro,
-      cidade,
-      uf: uf.slice(0, 2).toUpperCase(),
-      cep,
-    },
+    pagador,
     mensagem: {
       linha1: `Projeto Solar: ${projectTitle}`.slice(0, 70),
       linha2: `Ticket: ${ticket}`.slice(0, 70),
