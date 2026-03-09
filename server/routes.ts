@@ -868,6 +868,45 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // ── INTER PIX REFRESH ─────────────────────────────────────────────
+  // Fetches existing Inter charge data (QR code) without creating a new charge
+  app.post("/api/projects/:id/inter-refresh-pix", requireAuth, async (req, res) => {
+    try {
+      const project = await storage.getProject(req.params.id as string);
+      if (!project) return res.status(404).json({ error: "Projeto não encontrado" });
+      if (!project.interPixTxid) return res.status(400).json({ error: "Nenhuma cobrança Inter ativa" });
+
+      const settingsMap = await getSettingsMap();
+      const interCfg = getInterConfig(settingsMap);
+      if (!interCfg) return res.status(400).json({ error: "Inter não configurado" });
+
+      const result = await getInterPixStatus(interCfg, project.interPixTxid);
+      console.log("[inter-refresh] status:", result.status, "| pixCopiaECola:", result.pixCopiaECola ? result.pixCopiaECola.slice(0, 30) + "..." : "(vazio)");
+
+      const updateData: any = { interPixStatus: result.status };
+      if (result.pixCopiaECola) updateData.interPixCopiaECola = result.pixCopiaECola;
+      if (result.qrCodeBase64) updateData.interPixQrCodeBase64 = result.qrCodeBase64;
+
+      // If payment confirmed, advance project status
+      if (result.status === "PAGO" && project.status === "aprovado_pagamento_pendente") {
+        updateData.status = "projeto_tecnico";
+        updateData.paymentStatus = "approved";
+        await storage.addTimelineEntry({
+          projectId: project.id,
+          event: "Pagamento Inter confirmado",
+          details: `PIX ${project.interPixTxid} confirmado via consulta manual.`,
+          createdByRole: "admin",
+        });
+      }
+
+      await storage.updateProject(project.id, updateData);
+      const updated = await storage.getProject(project.id);
+      res.json(updated);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || "Erro ao atualizar cobrança Inter" });
+    }
+  });
+
   app.post("/api/projects/:id/generate-payment", requireAuth, async (req, res) => {
     try {
       const user = await getCurrentUser(req);

@@ -399,14 +399,38 @@ async function createBolepix(
     console.error("[inter] Bolepix error:", cobRes.status, cobRes.data);
     throw new Error(`Inter cobrança falhou: ${cobRes.status} — ${JSON.stringify(cobRes.data)}`);
   }
-  console.log("[inter] BolePIX respondeu com sucesso no path:", usedPath);
 
   const d = cobRes.data;
   const nossoNumero: string = d.nossoNumero || seuNumero;
-  const pixCopiaECola: string = d.pixCopiaECola || d.qrCode || d.pix?.pixCopiaECola || "";
-  const qrCodeBase64: string = d.imagemQrcode || d.qrCodeBase64 || "";
+  console.log("[inter] ✓ BolePIX criado. nossoNumero:", nossoNumero, "| POST response keys:", Object.keys(d));
 
-  console.log("[inter] ✓ BolePIX criado. nossoNumero:", nossoNumero);
+  // Extract PIX data from POST response if available
+  let pixCopiaECola: string = d.pixCopiaECola || d.qrCode || d.pix?.pixCopiaECola || d.pix?.qrCode || "";
+  let qrCodeBase64: string = d.imagemQrcode || d.qrCodeBase64 || d.pix?.imagemQrcode || "";
+
+  // If pixCopiaECola is not in the POST response, fetch the charge via GET to get the PIX QR code
+  if (!pixCopiaECola && nossoNumero) {
+    console.log("[inter] pixCopiaECola not in POST response, fetching via GET...");
+    await new Promise(r => setTimeout(r, 1500)); // small delay for Inter to process
+    try {
+      const getRes = await httpsRequest(
+        baseUrl, `/cobranca/v3/cobrancas/${nossoNumero}`, "GET",
+        config.certificate, config.privateKey,
+        { Authorization: `Bearer ${token}` }
+      );
+      console.log("[inter] GET charge HTTP", getRes.status, "| keys:", Object.keys(getRes.data || {}));
+      if (getRes.status === 200) {
+        const g = getRes.data;
+        pixCopiaECola = g.pixCopiaECola || g.qrCode || g.pix?.pixCopiaECola || g.pix?.qrCode || "";
+        qrCodeBase64 = g.imagemQrcode || g.qrCodeBase64 || g.pix?.imagemQrcode || qrCodeBase64;
+        console.log("[inter] GET response keys:", Object.keys(g));
+        console.log("[inter] pixCopiaECola from GET:", pixCopiaECola ? pixCopiaECola.slice(0, 40) + "..." : "(empty)");
+      }
+    } catch (getErr: any) {
+      console.warn("[inter] GET after POST failed:", getErr.message);
+    }
+  }
+
   return { txid: nossoNumero, pixCopiaECola, qrCodeBase64, status: d.situacao || "EMITIDO" };
 }
 
@@ -472,7 +496,7 @@ export async function createInterPixCharge({
 export async function getInterPixStatus(
   config: InterConfig,
   txid: string
-): Promise<{ status: string; paidAt?: string }> {
+): Promise<{ status: string; paidAt?: string; pixCopiaECola?: string; qrCodeBase64?: string }> {
   const { token, scope } = await getAccessTokenWithScope(config);
   const baseUrl = BASE_URLS[config.environment];
 
@@ -482,7 +506,6 @@ export async function getInterPixStatus(
   } else if (scope === "cobv.write") {
     res = await httpsRequest(baseUrl, `/pix/v2/cobv/${txid}`, "GET", config.certificate, config.privateKey, { Authorization: `Bearer ${token}` });
   } else {
-    // Use confirmed working path (ASCII, no special chars)
     const statusPaths = [
       `/cobranca/v3/cobrancas/${txid}`,
       `/cobranca-bolepix/v3/cobrancas/${txid}`,
@@ -497,23 +520,33 @@ export async function getInterPixStatus(
     throw new Error(`Inter status check falhou: ${res.status}`);
   }
 
+  const d = res.data;
+  console.log("[inter] getInterPixStatus response keys:", Object.keys(d));
+
   // Normalize status across APIs
-  const rawStatus: string = res.data.status || res.data.situacao || "EMITIDO";
-  // Map Inter PIX statuses to our internal format
+  const rawStatus: string = d.status || d.situacao || "EMITIDO";
   const statusMap: Record<string, string> = {
     CONCLUIDA: "PAGO",
     REMOVIDA_PELO_USUARIO_RECEBEDOR: "CANCELADO",
     REMOVIDA_PELO_PSP: "CANCELADO",
     PAGO: "PAGO",
+    A_RECEBER: "A_RECEBER",
+    EXPIRADO: "EXPIRADO",
   };
   const situacao = statusMap[rawStatus] || rawStatus;
 
   const paidAt: string | undefined =
-    res.data.pix?.[0]?.horario ||
-    res.data.dataPagamento ||
-    res.data.pixPago?.[0]?.horario;
+    d.pix?.[0]?.horario ||
+    d.dataPagamento ||
+    d.pixPago?.[0]?.horario;
 
-  return { status: situacao, paidAt };
+  // Extract PIX QR code data (available in GET response for BolePIX)
+  const pixCopiaECola: string | undefined =
+    d.pix?.pixCopiaECola || d.pixCopiaECola || d.qrCode || d.pix?.[0]?.pixCopiaECola || undefined;
+  const qrCodeBase64: string | undefined =
+    d.pix?.imagemQrcode || d.imagemQrcode || d.qrCodeBase64 || undefined;
+
+  return { status: situacao, paidAt, pixCopiaECola, qrCodeBase64 };
 }
 
 export async function testInterConnection(
