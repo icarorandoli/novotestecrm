@@ -718,7 +718,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
                 interPixCopiaECola: interPix.pixCopiaECola,
                 interPixQrCodeBase64: interPix.qrCodeBase64,
                 interPixStatus: interPix.status,
-              });
+                interBoletoLinhaDigitavel: interPix.linhaDigitavel || null,
+              } as any);
               console.log(`[inter] ✓ PIX Inter criado para projeto ${(req.params.id as string)}`);
             } catch (err) {
               console.error("[inter] Erro ao criar PIX Inter:", err);
@@ -813,6 +814,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
               regenUpdate.interPixCopiaECola = interPix2.pixCopiaECola;
               regenUpdate.interPixQrCodeBase64 = interPix2.qrCodeBase64;
               regenUpdate.interPixStatus = interPix2.status;
+              (regenUpdate as any).interBoletoLinhaDigitavel = interPix2.linhaDigitavel || null;
               console.log(`[inter] ✓ PIX Inter regenerado para projeto ${(req.params.id as string)}`);
             } catch (interErr) {
               console.error("[inter] Erro ao regenerar PIX Inter:", interErr);
@@ -907,6 +909,30 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // ── Boleto PDF proxy — streams Inter boleto PDF directly to client ────────
+  app.get("/api/projects/:id/inter-boleto-pdf", requireAuth, async (req, res) => {
+    try {
+      const project = await storage.getProject(req.params.id as string);
+      if (!project) return res.status(404).json({ error: "Projeto não encontrado" });
+      if (!project.interPixTxid) return res.status(400).json({ error: "Nenhuma cobrança Inter ativa" });
+
+      const settingsMap = await getSettingsMap();
+      const interCfg = getInterConfig(settingsMap);
+      if (!interCfg) return res.status(400).json({ error: "Inter não configurado" });
+
+      const { fetchInterBoletoPdf } = await import("./inter");
+      const pdfBuffer = await fetchInterBoletoPdf(interCfg, project.interPixTxid);
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `inline; filename="boleto-${project.interPixTxid}.pdf"`);
+      res.setHeader("Content-Length", pdfBuffer.length.toString());
+      res.send(pdfBuffer);
+    } catch (err: any) {
+      console.error("[inter] PDF proxy error:", err.message);
+      res.status(500).json({ error: err.message || "Erro ao buscar PDF do boleto" });
+    }
+  });
+
   app.post("/api/projects/:id/generate-payment", requireAuth, async (req, res) => {
     try {
       const user = await getCurrentUser(req);
@@ -996,6 +1022,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
           updateData.interPixCopiaECola = interPix.pixCopiaECola;
           updateData.interPixQrCodeBase64 = interPix.qrCodeBase64;
           updateData.interPixStatus = interPix.status;
+          (updateData as any).interBoletoLinhaDigitavel = interPix.linhaDigitavel || null;
           methods.push("PIX Banco Inter");
           console.log(`[inter] ✓ PIX Inter criado para projeto ${(req.params.id as string)}`);
         } catch (interErr: any) {

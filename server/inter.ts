@@ -217,6 +217,7 @@ export interface InterPixResult {
   pixCopiaECola: string;
   qrCodeBase64: string;
   status: string;
+  linhaDigitavel?: string;
 }
 
 function futureDateISO(days: number): string {
@@ -465,7 +466,10 @@ async function createBolepix(
     d.pix?.imagemQrcode ||
     d.qrCodeBase64 || "";
 
+  // Extract boleto linha digitável from POST response
+  const linhaDigitavel: string = d.linhaDigitavel || d.linha_digitavel || d.linhaDigitavelNominal || "";
   console.log("[inter] POST pixCopiaECola:", pixCopiaECola ? pixCopiaECola.slice(0, 40) + "..." : "(none)");
+  console.log("[inter] POST linhaDigitavel:", linhaDigitavel ? linhaDigitavel.slice(0, 40) + "..." : "(none)");
 
   // If pixCopiaECola is not in the POST response, fetch the charge via GET to get the PIX QR code
   if (!pixCopiaECola && nossoNumero) {
@@ -506,7 +510,7 @@ async function createBolepix(
     }
   }
 
-  return { txid: nossoNumero, pixCopiaECola, qrCodeBase64, status: d.situacao || "EMITIDO" };
+  return { txid: nossoNumero, pixCopiaECola, qrCodeBase64, status: d.situacao || "EMITIDO", linhaDigitavel };
 }
 
 // ── Main export ────────────────────────────────────────────────────────────
@@ -677,6 +681,70 @@ export async function getInterPixStatus(
   console.log("[inter] qrCodeBase64:", qrCodeBase64 ? "present" : "(none)");
 
   return { status: situacao, paidAt, pixCopiaECola, qrCodeBase64 };
+}
+
+/**
+ * Fetches the boleto PDF from Inter and returns it as a Buffer.
+ * Uses GET /cobranca/v3/cobrancas/{nossoNumero}/pdf
+ */
+export async function fetchInterBoletoPdf(
+  config: InterConfig,
+  nossoNumero: string
+): Promise<Buffer> {
+  const baseUrl = BASE_URLS[config.environment];
+
+  // Get token — try read scope first
+  let token: string;
+  const readAuth = await getTokenForReadOperations(config);
+  if (readAuth) {
+    token = readAuth.token;
+  } else {
+    const writeAuth = await getAccessTokenWithScope(config);
+    token = writeAuth.token;
+  }
+
+  const cert = cleanPem(config.certificate);
+  const key = cleanPem(config.privateKey);
+
+  const pdfPaths = [
+    `/cobranca/v3/cobrancas/${nossoNumero}/pdf`,
+    `/cobranca-bolepix/v3/cobrancas/${nossoNumero}/pdf`,
+  ];
+
+  for (const pdfPath of pdfPaths) {
+    const result = await new Promise<{ status: number; data: Buffer }>((resolve, reject) => {
+      const parsed = new URL(baseUrl + pdfPath);
+      const options: https.RequestOptions = {
+        hostname: parsed.hostname,
+        port: 443,
+        path: parsed.pathname,
+        method: "GET",
+        cert,
+        key,
+        rejectUnauthorized: true,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/pdf",
+        },
+      };
+      const req = https.request(options, (res) => {
+        const chunks: Buffer[] = [];
+        res.on("data", (chunk: Buffer) => chunks.push(chunk));
+        res.on("end", () => resolve({ status: res.statusCode || 0, data: Buffer.concat(chunks) }));
+      });
+      req.on("error", reject);
+      req.end();
+    });
+
+    console.log(`[inter] fetchInterBoletoPdf ${pdfPath} → HTTP ${result.status} (${result.data.length} bytes)`);
+
+    if (result.status === 200 && result.data.length > 0) {
+      return result.data;
+    }
+    if (result.status !== 404) break;
+  }
+
+  throw new Error(`Não foi possível obter o PDF do boleto. Verifique se a cobrança existe no Banco Inter.`);
 }
 
 export async function testInterConnection(

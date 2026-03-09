@@ -137,11 +137,12 @@ export const projects = pgTable("projects", {
   pixQrCodeBase64: text("pix_qr_code_base64"),
   pixPaymentId: text("pix_payment_id"),
 
-  // PIX Banco Inter
+  // PIX / BolePIX Banco Inter
   interPixTxid: text("inter_pix_txid"),
   interPixCopiaECola: text("inter_pix_copia_cola"),
   interPixQrCodeBase64: text("inter_pix_qr_code_base64"),
   interPixStatus: text("inter_pix_status"),
+  interBoletoLinhaDigitavel: text("inter_boleto_linha_digitavel"),
 
   // Responsáveis internos
   assignedEngineerId: varchar("assigned_engineer_id").references(() => users.id),

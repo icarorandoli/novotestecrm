@@ -288,69 +288,123 @@ function PixSection({ qrCode, qrCodeBase64 }: { qrCode: string; qrCodeBase64: st
   );
 }
 
-function InterPixSection({ copiaECola, qrCodeBase64 }: { copiaECola: string; qrCodeBase64?: string }) {
-  const [copied, setCopied] = useState(false);
+function InterBoletoSection({
+  projectId,
+  copiaECola,
+  qrCodeBase64,
+  linhaDigitavel,
+}: {
+  projectId: string;
+  copiaECola?: string | null;
+  qrCodeBase64?: string | null;
+  linhaDigitavel?: string | null;
+}) {
+  const [copiedPix, setCopiedPix] = useState(false);
+  const [copiedLinha, setCopiedLinha] = useState(false);
 
-  const handleCopy = async () => {
+  const copyText = async (text: string, setter: (v: boolean) => void) => {
     try {
-      await navigator.clipboard.writeText(copiaECola);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 3000);
+      await navigator.clipboard.writeText(text);
     } catch {
-      const textarea = document.createElement("textarea");
-      textarea.value = copiaECola;
-      document.body.appendChild(textarea);
-      textarea.select();
+      const el = document.createElement("textarea");
+      el.value = text;
+      document.body.appendChild(el);
+      el.select();
       document.execCommand("copy");
-      document.body.removeChild(textarea);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 3000);
+      document.body.removeChild(el);
     }
+    setter(true);
+    setTimeout(() => setter(false), 3000);
   };
 
   return (
-    <div className="mt-4 p-4 rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-800">
-      <div className="flex items-center gap-2 mb-3">
+    <div className="mt-4 p-4 rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-800 space-y-4">
+      <div className="flex items-center gap-2">
         <QrCode className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-        <p className="text-sm font-semibold text-orange-800 dark:text-orange-300">PIX via Banco Inter</p>
+        <p className="text-sm font-semibold text-orange-800 dark:text-orange-300">Pagamento via Banco Inter</p>
       </div>
 
-      {qrCodeBase64 && (
-        <div className="flex justify-center mb-3">
-          <img
-            src={`data:image/png;base64,${qrCodeBase64}`}
-            alt="QR Code PIX Banco Inter"
-            className="w-48 h-48 rounded-lg border border-orange-300 bg-white p-2"
-            data-testid="img-inter-pix-qrcode"
-          />
+      {/* PIX QR Code */}
+      {copiaECola && (
+        <div className="space-y-2">
+          <p className="text-xs text-orange-700 dark:text-orange-400 font-semibold uppercase tracking-wide">PIX Copia e Cola</p>
+          {qrCodeBase64 && (
+            <div className="flex justify-center mb-2">
+              <img
+                src={`data:image/png;base64,${qrCodeBase64}`}
+                alt="QR Code PIX Banco Inter"
+                className="w-36 h-36 rounded-lg border border-orange-300 bg-white p-1.5"
+                data-testid="img-inter-pix-qrcode"
+              />
+            </div>
+          )}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              readOnly
+              value={copiaECola}
+              className="flex-1 text-xs font-mono bg-white dark:bg-gray-800 border border-orange-300 dark:border-orange-700 rounded px-2 py-1.5 truncate"
+              data-testid="input-inter-pix-copiacola"
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => copyText(copiaECola, setCopiedPix)}
+              className="shrink-0 border-orange-400 text-orange-700 hover:bg-orange-100 dark:text-orange-400 dark:hover:bg-orange-900/40"
+              data-testid="button-copy-inter-pix"
+            >
+              {copiedPix ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+              <span className="ml-1 text-xs">{copiedPix ? "Copiado!" : "Copiar"}</span>
+            </Button>
+          </div>
         </div>
       )}
 
-      <div className="space-y-2">
-        <p className="text-xs text-orange-700 dark:text-orange-400 font-medium">PIX Copia e Cola:</p>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            readOnly
-            value={copiaECola}
-            className="flex-1 text-xs font-mono bg-white dark:bg-gray-800 border border-orange-300 dark:border-orange-700 rounded px-2 py-1.5 truncate"
-            data-testid="input-inter-pix-copiacola"
-          />
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleCopy}
-            className="shrink-0 border-orange-400 text-orange-700 hover:bg-orange-100 dark:text-orange-400 dark:hover:bg-orange-900/40"
-            data-testid="button-copy-inter-pix"
-          >
-            {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-            <span className="ml-1 text-xs">{copied ? "Copiado!" : "Copiar"}</span>
-          </Button>
+      {/* Linha Digitável */}
+      {linhaDigitavel && (
+        <div className="space-y-2">
+          <p className="text-xs text-orange-700 dark:text-orange-400 font-semibold uppercase tracking-wide">Linha Digitável do Boleto</p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              readOnly
+              value={linhaDigitavel}
+              className="flex-1 text-xs font-mono bg-white dark:bg-gray-800 border border-orange-300 dark:border-orange-700 rounded px-2 py-1.5 truncate"
+              data-testid="input-inter-linha-digitavel"
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => copyText(linhaDigitavel, setCopiedLinha)}
+              className="shrink-0 border-orange-400 text-orange-700 hover:bg-orange-100 dark:text-orange-400 dark:hover:bg-orange-900/40"
+              data-testid="button-copy-linha-digitavel"
+            >
+              {copiedLinha ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+              <span className="ml-1 text-xs">{copiedLinha ? "Copiado!" : "Copiar"}</span>
+            </Button>
+          </div>
         </div>
-        <p className="text-[11px] text-orange-600 dark:text-orange-500">
-          Abra o app do seu banco, escolha "Pagar com PIX" e use o QR Code ou cole o código acima.
+      )}
+
+      {/* Boleto PDF link */}
+      <a
+        href={`/api/projects/${projectId}/inter-boleto-pdf`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg font-bold text-sm text-white no-underline"
+        style={{ background: "#ff6600" }}
+        data-testid="link-inter-boleto-pdf"
+      >
+        <FileText className="h-4 w-4" />
+        Visualizar / Imprimir Boleto
+        <ExternalLink className="h-3.5 w-3.5" />
+      </a>
+
+      {!copiaECola && !linhaDigitavel && (
+        <p className="text-[11px] text-orange-600 dark:text-orange-500 text-center">
+          Clique no botão acima para visualizar e pagar o boleto.
         </p>
-      </div>
+      )}
     </div>
   );
 }
@@ -751,83 +805,44 @@ export default function PortalProjetoPage() {
                   </div>
 
                   <div className="space-y-4">
-                    {/* Inter PIX */}
-                    {project.interPixCopiaECola && (
-                      <InterPixSection 
-                        copiaECola={project.interPixCopiaECola} 
-                        qrCodeBase64={project.interPixQrCodeBase64 || undefined} 
+                    {/* Banco Inter — mostra boleto + PIX quando txid existir */}
+                    {project.interPixTxid && (
+                      <InterBoletoSection
+                        projectId={project.id}
+                        copiaECola={project.interPixCopiaECola}
+                        qrCodeBase64={project.interPixQrCodeBase64}
+                        linhaDigitavel={(project as any).interBoletoLinhaDigitavel}
                       />
                     )}
 
-                    {/* PIX Padrao */}
+                    {/* PIX Padrão (Mercado Pago) */}
                     {project.pixQrCode && project.pixQrCodeBase64 && (
                       <PixSection qrCode={project.pixQrCode} qrCodeBase64={project.pixQrCodeBase64} />
                     )}
-                    
+
                     {/* MP Checkout */}
                     {project.paymentLink && (
-                      <MercadoPagoBrick 
-                        preferenceId={project.paymentId || ""} 
-                        paymentLink={project.paymentLink} 
+                      <MercadoPagoBrick
+                        preferenceId={project.paymentId || ""}
+                        paymentLink={project.paymentLink}
                       />
                     )}
 
-                    {!project.interPixCopiaECola && !project.pixQrCode && !project.paymentLink && (
+                    {/* Aguardando — nenhum método gerado ainda */}
+                    {!project.interPixTxid && !project.pixQrCode && !project.paymentLink && (
                       <div className="flex flex-col items-center justify-center py-8 text-center bg-muted/30 rounded-2xl border border-dashed border-border/60">
-                        {interRefreshMut.isPending ? (
-                          <>
-                            <Loader2 className="h-8 w-8 text-orange-500 animate-spin mb-3" />
-                            <p className="text-sm font-bold">Carregando dados do pagamento...</p>
-                            <p className="text-xs text-muted-foreground mt-1">Buscando QR Code no Banco Inter.</p>
-                          </>
-                        ) : interRefreshMut.isError ? (
-                          <>
-                            <AlertCircle className="h-8 w-8 text-orange-400 mb-3" />
-                            <p className="text-sm font-bold">Erro ao buscar QR Code</p>
-                            <p className="text-xs text-muted-foreground mt-1 mb-3">Não foi possível recuperar o código PIX do Banco Inter.</p>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-orange-300 text-orange-700 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-900/30"
-                              onClick={() => interRefreshMut.mutate()}
-                              data-testid="button-inter-retry-qr"
-                            >
-                              <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-                              Tentar novamente
-                            </Button>
-                          </>
-                        ) : project.interPixTxid ? (
-                          <>
-                            <Loader2 className="h-8 w-8 text-orange-300 animate-spin mb-3" />
-                            <p className="text-sm font-bold">QR Code sendo processado...</p>
-                            <p className="text-xs text-muted-foreground mt-1 mb-3">O Banco Inter ainda está gerando o código PIX.</p>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-orange-300 text-orange-700 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-900/30"
-                              onClick={() => interRefreshMut.mutate()}
-                              data-testid="button-inter-reload-qr"
-                            >
-                              <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-                              Atualizar QR Code
-                            </Button>
-                          </>
-                        ) : (
-                          <>
-                            <AlertCircle className="h-8 w-8 text-muted-foreground mb-3" />
-                            <p className="text-sm font-bold">Aguardando geração da cobrança</p>
-                            <p className="text-xs text-muted-foreground mt-1">Nossa equipe financeira está processando seu pedido.</p>
-                          </>
-                        )}
+                        <AlertCircle className="h-8 w-8 text-muted-foreground mb-3" />
+                        <p className="text-sm font-bold">Aguardando geração da cobrança</p>
+                        <p className="text-xs text-muted-foreground mt-1">Nossa equipe financeira está processando seu pedido.</p>
                       </div>
                     )}
 
-                    {/* Manual status check button for Inter */}
-                    {project.interPixCopiaECola && project.status === "aprovado_pagamento_pendente" && (
+                    {/* Verificar pagamento Inter */}
+                    {project.interPixTxid && project.status === "aprovado_pagamento_pendente" && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="w-full mt-2 text-xs text-muted-foreground"
+                        className="w-full text-xs text-muted-foreground"
                         onClick={() => interRefreshMut.mutate()}
                         disabled={interRefreshMut.isPending}
                         data-testid="button-inter-check-status"
