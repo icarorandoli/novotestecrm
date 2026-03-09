@@ -945,14 +945,50 @@ export default function ProjectsPage() {
   const currentList = tab === "arquivados" ? archived : projects;
   const loading = tab === "arquivados" ? archivedLoading : isLoading;
 
+  const [clientFilter, setClientFilter] = useState("todos");
+  const [concessionariaFilter, setConcessionariaFilter] = useState("todos");
+
+  const uniqueClients = Array.from(new Set(currentList.map(p => p.client?.name || p.nomeCliente).filter(Boolean))) as string[];
+  const uniqueConcessionarias = Array.from(new Set(currentList.map(p => p.concessionaria).filter(Boolean))) as string[];
+
   const filtered = currentList.filter(p => {
-    const matchesSearch = p.title.toLowerCase().includes(search.toLowerCase()) ||
-      p.client?.name?.toLowerCase().includes(search.toLowerCase()) ||
-      p.nomeCliente?.toLowerCase().includes(search.toLowerCase()) ||
-      p.concessionaria?.toLowerCase().includes(search.toLowerCase());
+    const s = search.toLowerCase();
+    const matchesSearch = !s ||
+      p.title.toLowerCase().includes(s) ||
+      p.client?.name?.toLowerCase().includes(s) ||
+      p.nomeCliente?.toLowerCase().includes(s) ||
+      p.concessionaria?.toLowerCase().includes(s) ||
+      (p.ticketNumber || "").toLowerCase().includes(s) ||
+      (p.endereco || "").toLowerCase().includes(s) ||
+      (p.numeroInstalacao || "").toLowerCase().includes(s);
     const matchesStatus = statusFilter === "todos" || p.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesClient = clientFilter === "todos" || (p.client?.name || p.nomeCliente) === clientFilter;
+    const matchesConcessionaria = concessionariaFilter === "todos" || p.concessionaria === concessionariaFilter;
+    return matchesSearch && matchesStatus && matchesClient && matchesConcessionaria;
   });
+
+  const exportCSV = () => {
+    const headers = ["Ticket", "Título", "Cliente", "Status", "Potência (kWp)", "Concessionária", "Valor", "Endereço"];
+    const rows = filtered.map(p => [
+      p.ticketNumber || "",
+      p.title,
+      p.client?.name || p.nomeCliente || "",
+      getStatusLabel(p.status),
+      p.potencia || "",
+      p.concessionaria || "",
+      p.valor ? `R$ ${parseFloat(p.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "",
+      p.endereco || "",
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(c => `"${(c || "").replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `projetos_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: `${filtered.length} projeto(s) exportado(s) para CSV` });
+  };
 
   return (
     <div className="p-6 space-y-8 max-w-7xl mx-auto pb-20">
@@ -971,10 +1007,16 @@ export default function ProjectsPage() {
                 <span className="text-muted-foreground/60">{archived.length} arquivado{archived.length !== 1 ? "s" : ""}</span>
               </>
             )}
+            {filtered.length !== currentList.length && (
+              <>
+                <span className="mx-2 text-border">|</span>
+                <span className="text-primary font-bold">{filtered.length} exibido{filtered.length !== 1 ? "s" : ""}</span>
+              </>
+            )}
           </p>
         </div>
         
-        <Tabs value={tab} onValueChange={v => { setTab(v); setStatusFilter("todos"); setSearch(""); }} className="bg-muted/30 p-1 rounded-xl border border-border/40 w-full md:w-auto">
+        <Tabs value={tab} onValueChange={v => { setTab(v); setStatusFilter("todos"); setClientFilter("todos"); setConcessionariaFilter("todos"); setSearch(""); }} className="bg-muted/30 p-1 rounded-xl border border-border/40 w-full md:w-auto">
           <TabsList className="bg-transparent h-10 gap-1">
             <TabsTrigger value="ativos" data-testid="tab-ativos" className="rounded-lg px-4 font-bold text-[10px] uppercase tracking-wider data-[state=active]:bg-background data-[state=active]:shadow-sm">
               <FolderOpen className="h-3.5 w-3.5 mr-2" /> Ativos
@@ -1001,7 +1043,7 @@ export default function ProjectsPage() {
           </div>
           
           <div className="flex flex-wrap items-center gap-3">
-            <div className="min-w-[220px]">
+            <div className="min-w-[180px]">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="h-11 bg-background border-border/40 rounded-xl px-4 text-xs font-bold uppercase tracking-wider" data-testid="select-filter-status">
                   <div className="flex items-center gap-2">
@@ -1022,6 +1064,55 @@ export default function ProjectsPage() {
                 </SelectContent>
               </Select>
             </div>
+
+            {uniqueClients.length > 1 && (
+              <div className="min-w-[180px]">
+                <Select value={clientFilter} onValueChange={setClientFilter}>
+                  <SelectTrigger className="h-11 bg-background border-border/40 rounded-xl px-4 text-xs font-bold uppercase tracking-wider" data-testid="select-filter-client">
+                    <div className="flex items-center gap-2">
+                      <User className="h-3.5 w-3.5 text-primary" />
+                      <SelectValue />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl max-h-60">
+                    <SelectItem value="todos" className="text-[10px] font-bold uppercase tracking-widest">Todos os Clientes</SelectItem>
+                    {uniqueClients.sort().map(c => (
+                      <SelectItem key={c} value={c} className="text-xs">{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {uniqueConcessionarias.length > 1 && (
+              <div className="min-w-[180px]">
+                <Select value={concessionariaFilter} onValueChange={setConcessionariaFilter}>
+                  <SelectTrigger className="h-11 bg-background border-border/40 rounded-xl px-4 text-xs font-bold uppercase tracking-wider" data-testid="select-filter-concessionaria">
+                    <div className="flex items-center gap-2">
+                      <Building className="h-3.5 w-3.5 text-primary" />
+                      <SelectValue />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl max-h-60">
+                    <SelectItem value="todos" className="text-[10px] font-bold uppercase tracking-widest">Todas Concessionárias</SelectItem>
+                    {uniqueConcessionarias.sort().map(c => (
+                      <SelectItem key={c} value={c} className="text-xs">{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <Button
+              variant="outline"
+              onClick={exportCSV}
+              className="h-11 rounded-xl px-4 font-bold text-[10px] uppercase tracking-wider border-border/40"
+              data-testid="button-export-csv"
+              title="Exportar projetos filtrados para CSV"
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              Exportar CSV
+            </Button>
 
             <div className="flex bg-background border border-border/40 rounded-xl p-1 gap-1 h-11">
               <Button

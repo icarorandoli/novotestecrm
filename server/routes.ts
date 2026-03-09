@@ -32,6 +32,33 @@ import unzipper from "unzipper";
 // Memory-storage multer for certificate uploads (max 5MB)
 const memUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
+const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const MAX_LOGIN_ATTEMPTS = 10;
+
+function checkLoginRateLimit(ip: string): { allowed: boolean; retryAfterSec?: number } {
+  const now = Date.now();
+  const entry = loginAttempts.get(ip);
+  if (entry && now < entry.resetAt) {
+    if (entry.count >= MAX_LOGIN_ATTEMPTS) {
+      return { allowed: false, retryAfterSec: Math.ceil((entry.resetAt - now) / 1000) };
+    }
+    entry.count++;
+    return { allowed: true };
+  }
+  loginAttempts.set(ip, { count: 1, resetAt: now + LOGIN_WINDOW_MS });
+  return { allowed: true };
+}
+
+setInterval(() => {
+  const now = Date.now();
+  const keys = Array.from(loginAttempts.keys());
+  for (const key of keys) {
+    const val = loginAttempts.get(key);
+    if (val && now >= val.resetAt) loginAttempts.delete(key);
+  }
+}, 60_000);
+
 async function extractZipEntries(buf: Buffer): Promise<Record<string, string>> {
   const files: Record<string, string> = {};
   const directory = await unzipper.Open.buffer(buf);
@@ -234,6 +261,12 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.post("/api/auth/login", async (req, res) => {
     try {
+      const ip = req.ip || req.socket.remoteAddress || "unknown";
+      const rateCheck = checkLoginRateLimit(ip);
+      if (!rateCheck.allowed) {
+        return res.status(429).json({ error: `Muitas tentativas de login. Tente novamente em ${rateCheck.retryAfterSec} segundos.` });
+      }
+
       const { username, password } = req.body;
       if (!username || !password) return res.status(400).json({ error: "Usuário e senha obrigatórios" });
 
