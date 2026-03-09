@@ -774,11 +774,43 @@ export default function PortalProjetoPage() {
 
                     {!project.interPixCopiaECola && !project.pixQrCode && !project.paymentLink && (
                       <div className="flex flex-col items-center justify-center py-8 text-center bg-muted/30 rounded-2xl border border-dashed border-border/60">
-                        {project.interPixTxid || interRefreshMut.isPending ? (
+                        {interRefreshMut.isPending ? (
                           <>
                             <Loader2 className="h-8 w-8 text-orange-500 animate-spin mb-3" />
                             <p className="text-sm font-bold">Carregando dados do pagamento...</p>
                             <p className="text-xs text-muted-foreground mt-1">Buscando QR Code no Banco Inter.</p>
+                          </>
+                        ) : interRefreshMut.isError ? (
+                          <>
+                            <AlertCircle className="h-8 w-8 text-orange-400 mb-3" />
+                            <p className="text-sm font-bold">Erro ao buscar QR Code</p>
+                            <p className="text-xs text-muted-foreground mt-1 mb-3">Não foi possível recuperar o código PIX do Banco Inter.</p>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-orange-300 text-orange-700 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-900/30"
+                              onClick={() => interRefreshMut.mutate()}
+                              data-testid="button-inter-retry-qr"
+                            >
+                              <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                              Tentar novamente
+                            </Button>
+                          </>
+                        ) : project.interPixTxid ? (
+                          <>
+                            <Loader2 className="h-8 w-8 text-orange-300 animate-spin mb-3" />
+                            <p className="text-sm font-bold">QR Code sendo processado...</p>
+                            <p className="text-xs text-muted-foreground mt-1 mb-3">O Banco Inter ainda está gerando o código PIX.</p>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-orange-300 text-orange-700 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-900/30"
+                              onClick={() => interRefreshMut.mutate()}
+                              data-testid="button-inter-reload-qr"
+                            >
+                              <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                              Atualizar QR Code
+                            </Button>
                           </>
                         ) : (
                           <>
