@@ -774,32 +774,26 @@ export default function SettingsPage() {
                           <ShieldCheck className="h-3.5 w-3.5 text-orange-500" />
                           Certificado CA do Webhook Inter (.pem)
                         </Label>
-                        <div className="flex items-center gap-2">
+                        {interWebhookCert === "••••••••" && !showInterWebhookCert ? (
+                          <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                            <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0" />
+                            <span className="text-sm text-green-700 dark:text-green-400 font-medium">Certificado CA configurado</span>
+                            <Button type="button" variant="ghost" size="sm" className="ml-auto text-xs h-7" onClick={() => setShowInterWebhookCert(true)}>
+                              Substituir
+                            </Button>
+                          </div>
+                        ) : (
                           <Textarea
-                            value={showInterWebhookCert ? interWebhookCert : (interWebhookCert && interWebhookCert !== "••••••••" ? "••••••••" : interWebhookCert)}
+                            value={showInterWebhookCert ? interWebhookCert : interWebhookCert}
                             onChange={e => setInterWebhookCert(e.target.value)}
-                            onFocus={() => setShowInterWebhookCert(true)}
                             placeholder={"-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----"}
-                            rows={3}
-                            className="font-mono text-xs resize-none flex-1"
+                            rows={4}
+                            className="font-mono text-xs resize-none"
                             data-testid="textarea-inter-webhook-cert"
                           />
-                          {interWebhookCert ? (
-                            <a
-                              href="/api/inter/webhook-ca.pem"
-                              download="inter_webhook_ca.pem"
-                              className="flex-shrink-0"
-                              data-testid="link-download-webhook-cert"
-                            >
-                              <Button type="button" variant="outline" size="sm" className="gap-1.5 whitespace-nowrap">
-                                <ArrowRight className="h-3.5 w-3.5 rotate-90" />
-                                Baixar .pem
-                              </Button>
-                            </a>
-                          ) : null}
-                        </div>
+                        )}
                         <p className="text-xs text-muted-foreground">
-                          Baixe no portal do Inter: <strong>developers.inter.co → Minhas Integrações → Certificado Webhook</strong>. Cole o conteúdo do arquivo <code>.pem</code> acima. Após configurar o VPS, baixe este arquivo com o botão ao lado para usá-lo no Nginx.
+                          Cole aqui o conteúdo do arquivo <strong>.pem</strong> baixado em <strong>developers.inter.co → Minhas Integrações → Certificado Webhook</strong>. Este certificado é usado para autenticar chamadas do servidor do Inter.
                         </p>
                       </div>
 

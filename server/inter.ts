@@ -78,7 +78,6 @@ async function getAccessToken(config: InterConfig): Promise<string> {
     client_id: config.clientId,
     client_secret: config.clientSecret,
     grant_type: "client_credentials",
-    scope: "cob.write cob.read pix.read extrato.read",
   }).toString();
 
   const parsed = new URL(baseUrl + "/oauth/v2/token");
