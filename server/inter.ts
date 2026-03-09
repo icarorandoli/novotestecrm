@@ -534,6 +534,7 @@ export async function getInterPixStatus(
 
   const d = res.data;
   console.log("[inter] getInterPixStatus response keys:", Object.keys(d));
+  console.log("[inter] getInterPixStatus raw (500):", JSON.stringify(d).slice(0, 500));
 
   // Normalize status across APIs
   const rawStatus: string = d.status || d.situacao || "EMITIDO";
@@ -552,11 +553,26 @@ export async function getInterPixStatus(
     d.dataPagamento ||
     d.pixPago?.[0]?.horario;
 
-  // Extract PIX QR code data (available in GET response for BolePIX)
+  // Extract PIX QR code data — Inter BolePIX GET can return it in several locations
+  // depending on API version: top-level, under d.pix (object), or d.pix (array element)
   const pixCopiaECola: string | undefined =
-    d.pix?.pixCopiaECola || d.pixCopiaECola || d.qrCode || d.pix?.[0]?.pixCopiaECola || undefined;
+    d.pixCopiaECola ||          // BolePIX v3 top-level (most common)
+    d.pix?.pixCopiaECola ||     // nested object
+    d.pix?.[0]?.pixCopiaECola || // nested array element
+    d.qrCode ||                 // fallback alias
+    d.brcode ||                 // alternate field name
+    undefined;
+
   const qrCodeBase64: string | undefined =
-    d.pix?.imagemQrcode || d.imagemQrcode || d.qrCodeBase64 || undefined;
+    d.imagemQrCode ||           // BolePIX v3 top-level (capital C)
+    d.imagemQrcode ||           // lowercase variant
+    d.pix?.imagemQrCode ||
+    d.pix?.imagemQrcode ||
+    d.qrCodeBase64 ||
+    undefined;
+
+  console.log("[inter] getInterPixStatus → pixCopiaECola:", pixCopiaECola ? pixCopiaECola.slice(0, 30) + "..." : "(none)");
+  console.log("[inter] getInterPixStatus → qrCodeBase64:", qrCodeBase64 ? "present" : "(none)");
 
   return { status: situacao, paidAt, pixCopiaECola, qrCodeBase64 };
 }
