@@ -52,6 +52,11 @@ type ProjectWithClient = Project & { client: Client | null };
 export default function PortalHomePage() {
   const { user } = useAuth();
   const { data: projects = [], isLoading } = useQuery<ProjectWithClient[]>({ queryKey: ["/api/projects"] });
+  const { data: settings } = useQuery<Record<string, string>>({ queryKey: ["/api/settings/public"], retry: false });
+  const supportTitle = settings?.support_title || "Suporte Premium";
+  const supportDescription = settings?.support_description || "Nossa equipe de engenharia está pronta para auxiliar você em qualquer etapa.";
+  const supportButtonText = settings?.support_button_text || "Falar com Engenheiro";
+  const supportWhatsappUrl = settings?.support_whatsapp_url || "https://wa.me/seunumerowhatsapp";
 
   const active = projects.filter(p => p.status !== "cancelado" && p.status !== "homologado").length;
   const homologados = projects.filter(p => p.status === "homologado").length;
@@ -201,15 +206,15 @@ export default function PortalHomePage() {
               <ShieldCheck className="h-32 w-32" />
             </div>
             <CardHeader className="pb-2 relative z-10">
-              <CardTitle className="text-lg font-bold">Suporte Premium</CardTitle>
+              <CardTitle className="text-lg font-bold">{supportTitle}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 relative z-10">
               <p className="text-sm text-muted-foreground font-medium leading-relaxed">
-                Nossa equipe de engenharia está pronta para auxiliar você em qualquer etapa.
+                {supportDescription}
               </p>
               <Button className="w-full font-bold shadow-lg shadow-primary/20" asChild>
-                <a href="https://wa.me/seunumerowhatsapp" target="_blank" rel="noopener noreferrer">
-                  Falar com Engenheiro
+                <a href={supportWhatsappUrl} target="_blank" rel="noopener noreferrer">
+                  {supportButtonText}
                 </a>
               </Button>
             </CardContent>

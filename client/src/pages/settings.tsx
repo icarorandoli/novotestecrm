@@ -96,11 +96,45 @@ function LogoUploadSection({
   );
 }
 
+function FaviconUploadSection({ faviconUrl, setFaviconUrl }: { faviconUrl: string; setFaviconUrl: (v: string) => void }) {
+  const { toast } = useToast();
+  const [uploading, setUploading] = useState(false);
+  const { uploadFile } = useUpload({
+    onSuccess: (res) => { setFaviconUrl(res.objectPath); setUploading(false); toast({ title: "Favicon enviado com sucesso!" }); },
+    onError: () => { toast({ title: "Erro ao enviar favicon", variant: "destructive" }); setUploading(false); },
+  });
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (!file) return; setUploading(true); await uploadFile(file);
+  };
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-4">
+        <div className="h-12 w-12 border border-border rounded-lg bg-muted/40 flex items-center justify-center flex-shrink-0 overflow-hidden">
+          {faviconUrl ? <img src={faviconUrl} alt="Favicon" className="h-10 w-10 object-contain" /> : <ImageOff className="h-5 w-5 text-muted-foreground/40" />}
+        </div>
+        <div className="flex-1 space-y-2">
+          <Input value={faviconUrl} onChange={e => setFaviconUrl(e.target.value)} placeholder="https://... ou faça upload" data-testid="input-favicon-url" />
+          <label>
+            <Button type="button" variant="outline" size="sm" className="relative" disabled={uploading} data-testid="button-upload-favicon">
+              <Upload className="h-3.5 w-3.5 mr-1.5" />
+              {uploading ? "Enviando..." : "Upload do Favicon"}
+              <input type="file" accept="image/png,image/x-icon,image/svg+xml,image/webp" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleFile} disabled={uploading} />
+            </Button>
+          </label>
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground">Recomendado: PNG ou SVG com fundo transparente, mínimo 256×256px</p>
+    </div>
+  );
+}
+
 function LoginCustomSection({
   badgeText, setBadgeText,
   headline, setHeadline,
   highlight, setHighlight,
+  headlineSize, setHeadlineSize,
   description, setDescription,
+  descriptionSize, setDescriptionSize,
   feature1, setFeature1,
   feature2, setFeature2,
   feature3, setFeature3,
@@ -149,12 +183,35 @@ function LoginCustomSection({
               <Input value={headline} onChange={e => setHeadline(e.target.value)} placeholder="Gerencie projetos de energia solar..." data-testid="input-login-headline" />
             </div>
             <div className="space-y-2">
+              <Label>Tamanho do Título</Label>
+              <Select value={headlineSize} onValueChange={setHeadlineSize}>
+                <SelectTrigger data-testid="select-headline-size"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sm">Pequeno</SelectItem>
+                  <SelectItem value="md">Médio</SelectItem>
+                  <SelectItem value="lg">Grande (padrão)</SelectItem>
+                  <SelectItem value="xl">Muito Grande</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label>Destaque no Título (Highlight)</Label>
               <Input value={highlight} onChange={e => setHighlight(e.target.value)} placeholder="energia solar" data-testid="input-login-highlight" />
             </div>
             <div className="space-y-2">
               <Label>Descrição Curta</Label>
               <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Acompanhe cada etapa..." className="h-20" data-testid="input-login-description" />
+            </div>
+            <div className="space-y-2">
+              <Label>Tamanho da Descrição</Label>
+              <Select value={descriptionSize} onValueChange={setDescriptionSize}>
+                <SelectTrigger data-testid="select-description-size"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sm">Pequeno</SelectItem>
+                  <SelectItem value="md">Médio (padrão)</SelectItem>
+                  <SelectItem value="lg">Grande</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -273,13 +330,20 @@ export default function SettingsPage() {
   const [loginBadgeText, setLoginBadgeText] = useState("Portal SaaS de Homologação");
   const [loginHeadline, setLoginHeadline] = useState("Gerencie projetos de energia solar de forma simples e eficiente");
   const [loginHighlight, setLoginHighlight] = useState("energia solar");
+  const [loginHeadlineSize, setLoginHeadlineSize] = useState("lg");
   const [loginDescription, setLoginDescription] = useState("Acompanhe cada etapa da homologação fotovoltaica, do orçamento à aprovação final, com total transparência.");
+  const [loginDescriptionSize, setLoginDescriptionSize] = useState("md");
   const [loginFeature1, setLoginFeature1] = useState("Acompanhamento em tempo real de cada etapa");
   const [loginFeature2, setLoginFeature2] = useState("Documentos e ART centralizados no portal");
   const [loginFeature3, setLoginFeature3] = useState("Status atualizado automaticamente pela nossa equipe");
   const [loginBgType, setLoginBgType] = useState<"gradient" | "image">("gradient");
   const [loginBgImage, setLoginBgImage] = useState("");
   const [uploadingBg, setUploadingBg] = useState(false);
+
+  const [supportTitle, setSupportTitle] = useState("Suporte Premium");
+  const [supportDescription, setSupportDescription] = useState("Nossa equipe de engenharia está pronta para auxiliar você em qualquer etapa.");
+  const [supportButtonText, setSupportButtonText] = useState("Falar com Engenheiro");
+  const [supportWhatsappUrl, setSupportWhatsappUrl] = useState("https://wa.me/seunumerowhatsapp");
 
   const [faviconUrl, setFaviconUrl] = useState("");
   const [initialized, setInitialized] = useState(false);
@@ -313,12 +377,18 @@ export default function SettingsPage() {
     if (settings.login_badge_text) setLoginBadgeText(settings.login_badge_text);
     if (settings.login_headline) setLoginHeadline(settings.login_headline);
     if (settings.login_headline_highlight) setLoginHighlight(settings.login_headline_highlight);
+    if (settings.login_headline_size) setLoginHeadlineSize(settings.login_headline_size);
     if (settings.login_description) setLoginDescription(settings.login_description);
+    if (settings.login_description_size) setLoginDescriptionSize(settings.login_description_size);
     if (settings.login_feature_1) setLoginFeature1(settings.login_feature_1);
     if (settings.login_feature_2) setLoginFeature2(settings.login_feature_2);
     if (settings.login_feature_3) setLoginFeature3(settings.login_feature_3);
     if (settings.login_bg_type) setLoginBgType(settings.login_bg_type as "gradient" | "image");
     if (settings.login_bg_image) setLoginBgImage(settings.login_bg_image);
+    if (settings.support_title) setSupportTitle(settings.support_title);
+    if (settings.support_description) setSupportDescription(settings.support_description);
+    if (settings.support_button_text) setSupportButtonText(settings.support_button_text);
+    if (settings.support_whatsapp_url) setSupportWhatsappUrl(settings.support_whatsapp_url);
     setInitialized(true);
   }
 
@@ -370,12 +440,18 @@ export default function SettingsPage() {
         { key: "login_badge_text", value: loginBadgeText },
         { key: "login_headline", value: loginHeadline },
         { key: "login_headline_highlight", value: loginHighlight },
+        { key: "login_headline_size", value: loginHeadlineSize },
         { key: "login_description", value: loginDescription },
+        { key: "login_description_size", value: loginDescriptionSize },
         { key: "login_feature_1", value: loginFeature1 },
         { key: "login_feature_2", value: loginFeature2 },
         { key: "login_feature_3", value: loginFeature3 },
         { key: "login_bg_type", value: loginBgType },
         { key: "login_bg_image", value: loginBgImage },
+        { key: "support_title", value: supportTitle },
+        { key: "support_description", value: supportDescription },
+        { key: "support_button_text", value: supportButtonText },
+        { key: "support_whatsapp_url", value: supportWhatsappUrl },
       );
       await Promise.all(pairs.map(p => apiRequest("POST", "/api/settings", p)));
     },
@@ -440,11 +516,13 @@ export default function SettingsPage() {
       if (!res.ok) { toast({ title: data.error || "Erro ao processar arquivo", variant: "destructive" }); return; }
       if (data.certificate) { setInterCertificate(data.certificate); setShowInterCert(false); }
       if (data.privateKey) { setInterPrivateKey(data.privateKey); setShowInterKey(false); }
+      if (data.webhookCert) { setInterWebhookCert(data.webhookCert); }
       if (data.source === "zip") {
         const parts = [];
-        if (data.certificate) parts.push("certificado (.crt)");
+        if (data.certificate) parts.push("certificado da empresa (.crt)");
         if (data.privateKey) parts.push("chave privada (.key)");
-        toast({ title: "ZIP extraído com sucesso!", description: `Encontrado: ${parts.join(" e ")}. Clique em Salvar para confirmar.` });
+        if (data.webhookCert) parts.push("CA do Inter (webhook)");
+        toast({ title: "ZIP extraído com sucesso!", description: `Encontrado: ${parts.join(", ")}. Clique em Salvar para confirmar.` });
       } else {
         toast({ title: "Arquivo carregado!", description: "Clique em Salvar para confirmar." });
       }
@@ -525,7 +603,9 @@ export default function SettingsPage() {
                   badgeText={loginBadgeText} setBadgeText={setLoginBadgeText}
                   headline={loginHeadline} setHeadline={setLoginHeadline}
                   highlight={loginHighlight} setHighlight={setLoginHighlight}
+                  headlineSize={loginHeadlineSize} setHeadlineSize={setLoginHeadlineSize}
                   description={loginDescription} setDescription={setLoginDescription}
+                  descriptionSize={loginDescriptionSize} setDescriptionSize={setLoginDescriptionSize}
                   feature1={loginFeature1} setFeature1={setLoginFeature1}
                   feature2={loginFeature2} setFeature2={setLoginFeature2}
                   feature3={loginFeature3} setFeature3={setLoginFeature3}
@@ -533,6 +613,37 @@ export default function SettingsPage() {
                   bgImage={loginBgImage} setBgImage={setLoginBgImage}
                   uploadingBg={uploadingBg} setUploadingBg={setUploadingBg}
                 />
+
+                <Card className="border-muted/40 shadow-sm">
+                  <CardHeader>
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="h-4 w-4 text-primary" />
+                      <CardTitle className="text-lg">Suporte Premium (Portal)</CardTitle>
+                    </div>
+                    <CardDescription>Configure o card de suporte exibido no portal do integrador.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Título do Card</Label>
+                        <Input value={supportTitle} onChange={e => setSupportTitle(e.target.value)} placeholder="Suporte Premium" data-testid="input-support-title" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Texto do Botão</Label>
+                        <Input value={supportButtonText} onChange={e => setSupportButtonText(e.target.value)} placeholder="Falar com Engenheiro" data-testid="input-support-button-text" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Descrição</Label>
+                      <Textarea value={supportDescription} onChange={e => setSupportDescription(e.target.value)} placeholder="Nossa equipe de engenharia está pronta..." className="h-20" data-testid="input-support-description" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Link do WhatsApp</Label>
+                      <Input value={supportWhatsappUrl} onChange={e => setSupportWhatsappUrl(e.target.value)} placeholder="https://wa.me/5511999999999" data-testid="input-support-whatsapp-url" />
+                      <p className="text-xs text-muted-foreground">Formato: https://wa.me/55DDD999999999 (sem espaços ou símbolos)</p>
+                    </div>
+                  </CardContent>
+                </Card>
               </TabsContent>
 
               <TabsContent value="visual" className="mt-0 space-y-6">
@@ -548,8 +659,8 @@ export default function SettingsPage() {
                     <LogoUploadSection currentLogoUrl={logoUrl} onLogoUrlChange={setLogoUrl} />
                     <div className="pt-4 border-t border-muted/40 space-y-4">
                       <div className="space-y-2">
-                        <Label>Favicon URL</Label>
-                        <Input value={faviconUrl} onChange={e => setFaviconUrl(e.target.value)} placeholder="https://... ou caminho do arquivo" data-testid="input-favicon-url" />
+                        <Label>Favicon</Label>
+                        <FaviconUploadSection faviconUrl={faviconUrl} setFaviconUrl={setFaviconUrl} />
                       </div>
                       <div className="space-y-2">
                         <Label>Cor Primária</Label>

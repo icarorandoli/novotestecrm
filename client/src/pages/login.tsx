@@ -31,6 +31,21 @@ export default function LoginPage() {
   const loginFeature3 = settings?.login_feature_3 || "Status atualizado automaticamente pela nossa equipe";
   const loginBgType = settings?.login_bg_type || "gradient";
   const loginBgImage = settings?.login_bg_image || "";
+  const loginHeadlineSize = settings?.login_headline_size || "lg";
+  const loginDescriptionSize = settings?.login_description_size || "md";
+
+  const headlineSizeClass = {
+    sm: "text-3xl xl:text-5xl",
+    md: "text-4xl xl:text-6xl",
+    lg: "text-4xl xl:text-7xl",
+    xl: "text-5xl xl:text-8xl",
+  }[loginHeadlineSize] || "text-4xl xl:text-7xl";
+
+  const descriptionSizeClass = {
+    sm: "text-base",
+    md: "text-xl",
+    lg: "text-2xl",
+  }[loginDescriptionSize] || "text-xl";
 
   const headlineNode = (() => {
     if (!loginHighlight || !loginHeadline.includes(loginHighlight)) return <>{loginHeadline}</>;
@@ -89,11 +104,11 @@ export default function LoginPage() {
             {loginBadgeText}
           </div>
           
-          <h1 className="text-4xl xl:text-7xl font-extrabold text-white leading-[1.05] mb-8 drop-shadow-md">
+          <h1 className={`${headlineSizeClass} font-extrabold text-white leading-[1.05] mb-8 drop-shadow-md`}>
             {headlineNode}
           </h1>
           
-          <p className="text-xl text-sky-100/80 leading-relaxed mb-12 font-medium">
+          <p className={`${descriptionSizeClass} text-sky-100/80 leading-relaxed mb-12 font-medium`}>
             {loginDescription}
           </p>
 

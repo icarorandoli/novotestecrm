@@ -27,32 +27,20 @@ import path from "path";
 import fs from "fs";
 import { randomBytes } from "crypto";
 import multer from "multer";
-import zlib from "zlib";
+import unzipper from "unzipper";
 
-// Memory-storage multer for certificate uploads (max 2MB)
-const memUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024 } });
+// Memory-storage multer for certificate uploads (max 5MB)
+const memUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
-// Minimal ZIP parser using built-in zlib — supports STORED (0) and DEFLATED (8) entries
-function extractZipEntries(buf: Buffer): Record<string, string> {
+async function extractZipEntries(buf: Buffer): Promise<Record<string, string>> {
   const files: Record<string, string> = {};
-  let offset = 0;
-  while (offset + 30 < buf.length) {
-    if (buf.readUInt32LE(offset) !== 0x04034b50) break;
-    const compression = buf.readUInt16LE(offset + 8);
-    const compressedSize = buf.readUInt32LE(offset + 18);
-    const fnLen = buf.readUInt16LE(offset + 26);
-    const extraLen = buf.readUInt16LE(offset + 28);
-    const filename = buf.subarray(offset + 30, offset + 30 + fnLen).toString("utf8");
-    const dataStart = offset + 30 + fnLen + extraLen;
-    const compData = buf.subarray(dataStart, dataStart + compressedSize);
+  const directory = await unzipper.Open.buffer(buf);
+  for (const file of directory.files) {
+    if (file.type === "Directory") continue;
     try {
-      if (compression === 0) {
-        files[filename] = compData.toString("utf8");
-      } else if (compression === 8) {
-        files[filename] = zlib.inflateRawSync(compData).toString("utf8");
-      }
-    } catch { /* skip unreadable entry */ }
-    offset = dataStart + compressedSize;
+      const content = await file.buffer();
+      files[file.path] = content.toString("utf8");
+    } catch { /* skip unreadable */ }
   }
   return files;
 }
@@ -1384,7 +1372,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         "mp_public_key", "mp_enabled", "company_name", "logo_url", "primary_color",
         "login_badge_text", "login_headline", "login_headline_highlight",
         "login_description", "login_feature_1", "login_feature_2", "login_feature_3",
-        "login_bg_type", "login_bg_image",
+        "login_bg_type", "login_bg_image", "login_headline_size", "login_description_size",
+        "support_title", "support_description", "support_button_text", "support_whatsapp_url",
       ];
       for (const s of settings) {
         if (!s.value) continue;
@@ -1434,11 +1423,31 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   // ── INTER TEST CONNECTION ──────────────────────────────────────────
   app.post("/api/inter/test", requireAuth, async (req, res) => {
     try {
-      const { clientId, clientSecret, certificate, privateKey, pixKey, environment } = req.body;
-      if (!clientId || !clientSecret || !certificate || !privateKey || !pixKey) {
-        return res.status(400).json({ ok: false, message: "Todos os campos são obrigatórios para testar a conexão." });
+      const body = req.body;
+      const settingsMap = await getSettingsMap();
+
+      // Fall back to DB values for masked fields
+      const resolve = (field: string, dbKey: string) =>
+        (field && field !== "••••••••") ? field : (settingsMap[dbKey] || "");
+
+      const clientId     = resolve(body.clientId,     "inter_client_id");
+      const clientSecret = resolve(body.clientSecret, "inter_client_secret");
+      const certificate  = resolve(body.certificate,  "inter_certificate");
+      const privateKey   = resolve(body.privateKey,   "inter_private_key");
+      const pixKey       = resolve(body.pixKey,       "inter_pix_key");
+      const environment  = body.environment || settingsMap["inter_environment"] || "production";
+
+      const missing: string[] = [];
+      if (!clientId)     missing.push("Client ID");
+      if (!clientSecret) missing.push("Client Secret");
+      if (!certificate)  missing.push("Certificado (.crt)");
+      if (!privateKey)   missing.push("Chave Privada (.key)");
+
+      if (missing.length) {
+        return res.status(400).json({ ok: false, message: `Campos obrigatórios não configurados: ${missing.join(", ")}` });
       }
-      const config: InterConfig = { clientId, clientSecret, certificate, privateKey, pixKey, environment: environment || "production" };
+
+      const config: InterConfig = { clientId, clientSecret, certificate, privateKey, pixKey: pixKey || "", environment: environment as "sandbox" | "production" };
       const result = await testInterConnection(config);
       res.json(result);
     } catch (err: any) {
@@ -1473,23 +1482,40 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         }
       }
 
+      // Support both boleto+PIX format (nossoNumero/situacao) and legacy PIX format (pix[].txid)
       let txid: string | null = null;
+      let paidValue = 0;
+      let isPago = false;
 
-      if (body?.pix && Array.isArray(body.pix) && body.pix.length > 0) {
+      if (body?.nossoNumero) {
+        // Boleto+PIX API webhook format
+        txid = body.nossoNumero;
+        isPago = body.situacao === "PAGO";
+        paidValue = parseFloat(body.valorPago || body.valorNominal || "0");
+      } else if (body?.pix && Array.isArray(body.pix) && body.pix.length > 0) {
+        // Legacy PIX API webhook format
         txid = body.pix[0]?.txid || null;
+        isPago = true;
+        paidValue = parseFloat(body.pix[0]?.valor || "0");
       } else if (body?.txid) {
         txid = body.txid;
+        isPago = true;
       }
 
       if (!txid) {
-        console.log("[inter] Webhook: txid não encontrado no body");
+        console.log("[inter] Webhook: identificador não encontrado no body");
+        return;
+      }
+
+      if (!isPago) {
+        console.log(`[inter] Webhook: evento não é pagamento (situacao: ${body.situacao}), ignorado`);
         return;
       }
 
       const projects = await storage.getProjects();
       const project = projects.find((p: any) => p.interPixTxid === txid);
       if (!project) {
-        console.log(`[inter] Webhook: projeto com txid ${txid} não encontrado`);
+        console.log(`[inter] Webhook: projeto com nossoNumero/txid ${txid} não encontrado`);
         return;
       }
 
@@ -1497,8 +1523,6 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         console.log(`[inter] Webhook: projeto ${project.id} já avançado (${project.status}), ignorado`);
         return;
       }
-
-      const paidValue = parseFloat(body.pix?.[0]?.valor || body.valor || "0");
 
       await storage.updateProject(project.id, {
         status: "projeto_tecnico",
@@ -1587,16 +1611,40 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
                     buf.readUInt32LE(0) === 0x04034b50;
 
       if (isZip) {
-        const entries = extractZipEntries(buf);
-        let cert = "";
+        const entries = await extractZipEntries(buf);
+        let entityCert = "";
+        let caCert = "";
         let key = "";
+        const filesFound: string[] = [];
         for (const [name, content] of Object.entries(entries)) {
           const n = name.toLowerCase();
-          if (n.endsWith(".crt") || n.endsWith(".pem") && content.includes("CERTIFICATE")) cert = content.trim();
-          else if (n.endsWith(".key") || n.endsWith(".pem") && content.includes("PRIVATE KEY")) key = content.trim();
+          const baseName = n.split("/").pop() || n;
+          filesFound.push(baseName);
+          if (n.endsWith(".key") || (n.endsWith(".pem") && content.includes("PRIVATE KEY"))) {
+            key = content.trim();
+          } else if (n.endsWith(".crt") || (n.endsWith(".pem") && content.includes("CERTIFICATE"))) {
+            // Distinguish entity cert from Inter CA cert by filename
+            // CA cert is typically named "inter-ca.crt", "ca.crt", or contains "-ca"
+            const isCA = baseName.includes("inter-ca") || baseName === "ca.crt" ||
+                         baseName.startsWith("ca-") || baseName.endsWith("-ca.crt");
+            if (isCA) {
+              caCert = content.trim();
+            } else {
+              entityCert = content.trim();
+            }
+          }
         }
-        if (!cert && !key) return res.status(422).json({ error: "Nenhum certificado ou chave encontrado no ZIP. Verifique se é o arquivo correto do Banco Inter." });
-        return res.json({ certificate: cert || null, privateKey: key || null, source: "zip" });
+        // Fallback: if only one cert found, it's the entity cert
+        if (!entityCert && caCert) {
+          entityCert = caCert;
+          caCert = "";
+        }
+        console.log("[inter] ZIP extracted files:", filesFound, "| entityCert:", !!entityCert, "| caCert:", !!caCert, "| key:", !!key);
+        if (!entityCert && !key) return res.status(422).json({
+          error: `Nenhum certificado ou chave encontrado no ZIP.${filesFound.length ? ` Arquivos encontrados: ${filesFound.join(", ")}` : " O arquivo parece vazio ou em formato não suportado."}`,
+          filesFound,
+        });
+        return res.json({ certificate: entityCert || null, webhookCert: caCert || null, privateKey: key || null, source: "zip", filesFound });
       }
 
       // Handle individual .crt or .key file

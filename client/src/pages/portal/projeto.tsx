@@ -710,9 +710,6 @@ export default function PortalProjetoPage() {
                       <p className="text-sm font-bold flex items-center gap-2">
                         <Check className="h-4 w-4 text-emerald-500" /> Liberação imediata após confirmação
                       </p>
-                      <p className="text-sm font-bold flex items-center gap-2">
-                        <Check className="h-4 w-4 text-emerald-500" /> Nota fiscal enviada por e-mail
-                      </p>
                     </div>
                   </div>
 
