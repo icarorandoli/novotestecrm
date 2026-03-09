@@ -268,9 +268,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       const user = await getCurrentUser(req);
       if (!user) return res.status(401).json({ error: "Não autenticado" });
-      const { name, email, phone, address, company, currentPassword, newPassword } = req.body;
+      const { name, email, phone, address, company, currentPassword, newPassword,
+              rua, numero, bairro, cep, cidade, estado, cpfCnpj } = req.body;
 
-      let updateData: any = { name, email, phone, address, company };
+      let updateData: any = { name, email, phone, address, company,
+                              rua, numero, bairro, cep, cidade, estado, cpfCnpj };
 
       if (newPassword) {
         if (!currentPassword) return res.status(400).json({ error: "Senha atual obrigatória" });
@@ -285,7 +287,12 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       // Update linked client record too
       const client = await storage.getClientByUserId(user.id);
       if (client) {
-        await storage.updateClient(client.id, { name: name || client.name, email: email || client.email, phone, address, company });
+        await storage.updateClient(client.id, {
+          name: name || client.name,
+          email: email || client.email,
+          phone, address, company,
+          rua, numero, bairro, cep, cidade, estado, cpfCnpj,
+        });
       }
 
       const { password: _, ...safeUser } = updated;
@@ -704,6 +711,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
                 valor: valorStr,
                 integradorName: intName || undefined,
                 integradorCpfCnpj: intCpfCnpjAuto || undefined,
+                integradorAddress: current.integrador || undefined,
               });
               await storage.updateProject((req.params.id as string), {
                 interPixTxid: interPix.txid,
@@ -799,6 +807,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
                 valor: data.valor,
                 integradorName: intName2 || undefined,
                 integradorCpfCnpj: intCpfCnpj2 || undefined,
+                integradorAddress: current.integrador || undefined,
               });
               regenUpdate.interPixTxid = interPix2.txid;
               regenUpdate.interPixCopiaECola = interPix2.pixCopiaECola;
@@ -942,6 +951,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
             valor: project.valor,
             integradorName: intName || undefined,
             integradorCpfCnpj: intCpfCnpj || undefined,
+            integradorAddress: (project as any).integrador || undefined,
           });
           updateData.interPixTxid = interPix.txid;
           updateData.interPixCopiaECola = interPix.pixCopiaECola;

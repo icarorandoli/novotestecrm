@@ -22,9 +22,21 @@ import {
 import { db } from "./db";
 import { eq, desc, count, isNull, not, gte, lte, and, or, ilike } from "drizzle-orm";
 
+export type IntegradorInfo = {
+  name: string;
+  email: string | null;
+  cpfCnpj: string | null;
+  rua: string | null;
+  numero: string | null;
+  bairro: string | null;
+  cep: string | null;
+  cidade: string | null;
+  estado: string | null;
+};
+
 export type ProjectWithIntegrador = Project & {
   client: Client | null;
-  integrador: { name: string; email: string | null; cpfCnpj: string | null } | null;
+  integrador: IntegradorInfo | null;
 };
 
 export interface IStorage {
@@ -189,10 +201,30 @@ export class DatabaseStorage implements IStorage {
   private async enrichWithIntegrador(rows: { projects: Project; clients: Client | null }[]): Promise<ProjectWithIntegrador[]> {
     const result: ProjectWithIntegrador[] = [];
     for (const r of rows) {
-      let integrador: { name: string; email: string | null; cpfCnpj: string | null } | null = null;
+      let integrador: IntegradorInfo | null = null;
       if (r.clients?.userId) {
-        const [u] = await db.select({ name: users.name, email: users.email, cpfCnpj: users.cpfCnpj }).from(users).where(eq(users.id, r.clients.userId));
-        if (u) integrador = { name: u.name, email: u.email, cpfCnpj: u.cpfCnpj };
+        const [u] = await db.select({
+          name: users.name,
+          email: users.email,
+          cpfCnpj: users.cpfCnpj,
+          rua: users.rua,
+          numero: users.numero,
+          bairro: users.bairro,
+          cep: users.cep,
+          cidade: users.cidade,
+          estado: users.estado,
+        }).from(users).where(eq(users.id, r.clients.userId));
+        if (u) integrador = {
+          name: u.name,
+          email: u.email,
+          cpfCnpj: u.cpfCnpj,
+          rua: u.rua,
+          numero: u.numero,
+          bairro: u.bairro,
+          cep: u.cep,
+          cidade: u.cidade,
+          estado: u.estado,
+        };
       }
       result.push({ ...r.projects, client: r.clients ?? null, integrador });
     }

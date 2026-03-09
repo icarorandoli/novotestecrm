@@ -419,6 +419,7 @@ export async function createInterPixCharge({
   valor,
   integradorName,
   integradorCpfCnpj,
+  integradorAddress,
 }: {
   config: InterConfig;
   projectId: string;
@@ -427,6 +428,14 @@ export async function createInterPixCharge({
   valor: string;
   integradorName?: string;
   integradorCpfCnpj?: string;
+  integradorAddress?: {
+    rua?: string | null;
+    numero?: string | null;
+    bairro?: string | null;
+    cep?: string | null;
+    cidade?: string | null;
+    estado?: string | null;
+  };
 }): Promise<InterPixResult> {
   const numericValue = parseFloat(valor.replace(/\./g, "").replace(",", "."));
   if (isNaN(numericValue) || numericValue <= 0) {
@@ -439,15 +448,24 @@ export async function createInterPixCharge({
   const txid = generateTxid();
   const description = `Projeto Solar: ${projectTitle} | Ticket: ${ticket}`;
   const pagadorNome = integradorName || "Integrador Solar";
-  // CPF/CNPJ is required by Inter BolePIX API; use integrador's or a placeholder
   const pagadorCpfCnpj = integradorCpfCnpj || "00000000000";
+
+  // Map integrador address to pagador address fields
+  const pagadorAddress = integradorAddress ? {
+    endereco: integradorAddress.rua || undefined,
+    numero: integradorAddress.numero || undefined,
+    bairro: integradorAddress.bairro || undefined,
+    cep: integradorAddress.cep || undefined,
+    cidade: integradorAddress.cidade || undefined,
+    uf: integradorAddress.estado || undefined,
+  } : undefined;
 
   if (scope === "cob.write") {
     return createPixCob(config, token, txid, numericValue, description);
   } else if (scope === "cobv.write") {
     return createPixCobv(config, token, txid, numericValue, description);
   } else {
-    return createBolepix(config, token, seuNumero, numericValue, pagadorNome, pagadorCpfCnpj, projectTitle, ticket);
+    return createBolepix(config, token, seuNumero, numericValue, pagadorNome, pagadorCpfCnpj, projectTitle, ticket, pagadorAddress);
   }
 }
 
