@@ -72,7 +72,9 @@ export default function ContaPage() {
             estado: data.uf || p.estado,
           }));
         }
-      } catch {}
+      } catch {
+        toast({ title: "Não foi possível buscar o CEP", description: "Verifique o número e tente novamente.", variant: "destructive" });
+      }
       setCepLoading(false);
     }
   };

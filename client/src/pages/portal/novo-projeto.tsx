@@ -64,11 +64,18 @@ function FileUploadZone({ label, docType, required, uploaded, onUploaded, onRemo
     },
   });
 
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const isImage = file.type.startsWith("image/");
     if (isImage) {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
       const url = URL.createObjectURL(file);
       setPendingFile(file);
       setPreviewUrl(url);

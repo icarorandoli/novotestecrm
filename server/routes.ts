@@ -482,20 +482,34 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   // ── CLIENTS ────────────────────────────────────────────────────────
-  app.get("/api/clients", requireAuth, async (_req, res) => {
+  app.get("/api/clients", requireAuth, async (req, res) => {
     try {
+      const user = await getCurrentUser(req);
+      if (!user || !["admin", "engenharia", "financeiro", "tecnico"].includes(user.role)) {
+        return res.status(403).json({ error: "Sem permissão" });
+      }
       res.json(await storage.getClients());
     } catch { res.status(500).json({ error: "Erro ao buscar clientes" }); }
   });
 
   app.get("/api/clients/:id", requireAuth, async (req, res) => {
-    const c = await storage.getClient((req.params.id as string));
-    if (!c) return res.status(404).json({ error: "Não encontrado" });
-    res.json(c);
+    try {
+      const user = await getCurrentUser(req);
+      if (!user || !["admin", "engenharia", "financeiro", "tecnico"].includes(user.role)) {
+        return res.status(403).json({ error: "Sem permissão" });
+      }
+      const c = await storage.getClient((req.params.id as string));
+      if (!c) return res.status(404).json({ error: "Não encontrado" });
+      res.json(c);
+    } catch { res.status(500).json({ error: "Erro ao buscar cliente" }); }
   });
 
   app.post("/api/clients", requireAuth, async (req, res) => {
     try {
+      const user = await getCurrentUser(req);
+      if (!user || !["admin", "engenharia", "financeiro"].includes(user.role)) {
+        return res.status(403).json({ error: "Sem permissão" });
+      }
       const data = insertClientSchema.parse(req.body);
       res.status(201).json(await storage.createClient(data));
     } catch (err: any) { res.status(400).json({ error: err.message }); }
@@ -503,6 +517,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.patch("/api/clients/:id", requireAuth, async (req, res) => {
     try {
+      const user = await getCurrentUser(req);
+      if (!user || !["admin", "engenharia", "financeiro"].includes(user.role)) {
+        return res.status(403).json({ error: "Sem permissão" });
+      }
       const data = insertClientSchema.partial().parse(req.body);
       const c = await storage.updateClient((req.params.id as string), data);
       if (!c) return res.status(404).json({ error: "Não encontrado" });
@@ -512,6 +530,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.delete("/api/clients/:id", requireAuth, async (req, res) => {
     try {
+      const user = await getCurrentUser(req);
+      if (user?.role !== "admin") return res.status(403).json({ error: "Sem permissão" });
       await storage.deleteClient((req.params.id as string));
       res.status(204).send();
     } catch { res.status(500).json({ error: "Erro ao deletar" }); }
@@ -1053,6 +1073,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.delete("/api/projects/:id", requireAuth, async (req, res) => {
     try {
+      const user = await getCurrentUser(req);
+      if (user?.role !== "admin") return res.status(403).json({ error: "Sem permissão" });
       await storage.deleteProject((req.params.id as string));
       res.status(204).send();
     } catch { res.status(500).json({ error: "Erro ao deletar" }); }
@@ -1060,7 +1082,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   // ── DOCUMENTS ──────────────────────────────────────────────────────
   app.get("/api/projects/:id/documents", requireAuth, async (req, res) => {
-    res.json(await storage.getDocumentsByProject((req.params.id as string)));
+    try {
+      res.json(await storage.getDocumentsByProject((req.params.id as string)));
+    } catch { res.status(500).json({ error: "Erro ao buscar documentos" }); }
   });
 
   app.post("/api/projects/:id/documents", requireAuth, async (req, res) => {
@@ -1135,6 +1159,14 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.delete("/api/projects/:projectId/documents/:docId", requireAuth, async (req, res) => {
     try {
+      const user = await getCurrentUser(req);
+      const project = await storage.getProject((req.params.projectId as string));
+      if (!project) return res.status(404).json({ error: "Projeto não encontrado" });
+      const isInternal = ["admin", "engenharia", "financeiro", "tecnico"].includes(user?.role || "");
+      if (!isInternal) {
+        const client = await storage.getClientByUserId(user!.id);
+        if (!client || project.clientId !== client.id) return res.status(403).json({ error: "Sem permissão" });
+      }
       await storage.deleteDocument((req.params.docId as string));
       res.status(204).send();
     } catch { res.status(500).json({ error: "Erro ao deletar documento" }); }
@@ -1142,7 +1174,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   // ── TIMELINE ───────────────────────────────────────────────────────
   app.get("/api/projects/:id/timeline", requireAuth, async (req, res) => {
-    res.json(await storage.getTimelineByProject((req.params.id as string)));
+    try {
+      res.json(await storage.getTimelineByProject((req.params.id as string)));
+    } catch { res.status(500).json({ error: "Erro ao buscar timeline" }); }
   });
 
   app.post("/api/projects/:id/timeline", requireAuth, async (req, res) => {
