@@ -13,25 +13,49 @@ erro() { echo -e "${VERMELHO}[ERRO] $1${NC}"; exit 1; }
 
 echo ""
 echo "================================================"
-echo "   Randoli Engenharia Solar — Instalador"
+echo "   Randoli Engenharia Solar — Instalador VPS"
 echo "================================================"
 echo ""
 
-# Configurações fixas
-DOMINIO="projetos.randolisolar.com.br"
-DB_SENHA="Icba281287@"
-EMAIL="icaro@randolisolar.com.br"
+# ── 0. Perguntas interativas (personalização por cliente) ────────────────
 
-echo "Configurações detectadas:"
-echo "  Domínio: $DOMINIO"
-echo "  E-mail SSL: $EMAIL"
+read -rp "Domínio da aplicação (ex: projetos.seusistema.com.br): " DOMINIO_INPUT
+DOMINIO=${DOMINIO_INPUT:-projetos.seu-dominio.com.br}
+
+read -rp "Diretório de instalação [/root/randoli-solar]: " APP_DIR_INPUT
+APP_DIR=${APP_DIR_INPUT:-/root/randoli-solar}
+
+read -rp "Usuário do PostgreSQL [randoli]: " DB_USER_INPUT
+DB_USER=${DB_USER_INPUT:-randoli}
+
+read -rp "Nome do banco de dados [${DB_USER}_solar]: " DB_NAME_INPUT
+DB_NAME_DEFAULT="${DB_USER}_solar"
+DB_NAME=${DB_NAME_INPUT:-$DB_NAME_DEFAULT}
+
+echo -n "Senha do banco de dados (será criada se não existir): "
+read -rs DB_SENHA
 echo ""
 
-APP_DIR="/root/randoli-solar"
-DB_USER="randoli"
-DB_NAME="randoli_solar"
+read -rp "E-mail de administrador (para certificados SSL): " EMAIL
+
+read -rp "LICENSE_KEY (deixe vazio para configurar depois): " LICENSE_KEY
+read -rp "LICENSE_SERVER_URL (deixe vazio para configurar depois): " LICENSE_SERVER_URL
+
 APP_PORT=3000
 SESSION_SECRET=$(tr -dc 'a-zA-Z0-9' </dev/urandom | head -c 48)
+
+echo ""
+echo "Resumo das configurações:"
+echo "  Domínio:          $DOMINIO"
+echo "  Diretório app:    $APP_DIR"
+echo "  DB user:          $DB_USER"
+echo "  DB name:          $DB_NAME"
+echo "  E-mail SSL:       $EMAIL"
+echo ""
+read -rp "Confirmar e continuar? [s/N]: " CONFIRM
+if [[ "$CONFIRM" != "s" && "$CONFIRM" != "S" ]]; then
+  erro "Instalação cancelada pelo usuário."
+fi
 
 # ── 1. Dependências do sistema ───────────────────────
 info "Atualizando sistema e instalando dependências..."
@@ -84,6 +108,8 @@ SESSION_SECRET=${SESSION_SECRET}
 NODE_ENV=production
 PORT=${APP_PORT}
 APP_URL=${APP_URL_VAL}
+LICENSE_KEY=${LICENSE_KEY}
+LICENSE_SERVER_URL=${LICENSE_SERVER_URL}
 EOF
 ok ".env criado"
 
@@ -92,11 +118,10 @@ info "Instalando dependências do projeto (pode demorar)..."
 npm install
 ok "Dependências instaladas"
 
-# ── 8. Criar tabelas ──────────────────────────────────
-info "Criando tabelas no banco de dados..."
-export DATABASE_URL="postgresql://${DB_USER}:${DB_SENHA_URL}@localhost:5432/${DB_NAME}"
-npx drizzle-kit push --force
-ok "Tabelas criadas"
+# ── 8. Criar tabelas (migração segura para VPS) ───────
+info "Criando/sincronizando tabelas no banco de dados..."
+sudo -u postgres psql -d "${DB_NAME}" -f migrate_vps.sql
+ok "Tabelas criadas/sincronizadas"
 
 # ── 9. Build ──────────────────────────────────────────
 info "Compilando o projeto (pode demorar 1-2 minutos)..."
@@ -143,14 +168,19 @@ nginx -t && systemctl restart nginx
 ok "Nginx configurado"
 
 # ── 12. SSL ─────────────────────────────────────────
-info "Instalando certificado SSL (HTTPS)..."
-apt-get install -y -qq certbot python3-certbot-nginx 2>/dev/null
-certbot --nginx -d "$DOMINIO" --non-interactive --agree-tos -m "$EMAIL" 2>/dev/null && {
-  ok "HTTPS ativado para $DOMINIO"
-} || {
-  echo -e "${AMARELO}[AVISO] SSL falhou — verifique se o DNS já aponta para esta VPS.${NC}"
-  echo "        Quando o DNS propagar, rode: sudo certbot --nginx -d $DOMINIO"
-}
+if [[ -n "$EMAIL" && "$DOMINIO" != "projetos.seu-dominio.com.br" ]]; then
+  info "Instalando certificado SSL (HTTPS)..."
+  apt-get install -y -qq certbot python3-certbot-nginx 2>/dev/null
+  certbot --nginx -d "$DOMINIO" --non-interactive --agree-tos -m "$EMAIL" 2>/dev/null && {
+    ok "HTTPS ativado para $DOMINIO"
+  } || {
+    echo -e "${AMARELO}[AVISO] SSL falhou — verifique se o DNS já aponta para esta VPS.${NC}"
+    echo "        Quando o DNS propagar, rode: sudo certbot --nginx -d $DOMINIO"
+  }
+else
+  echo -e "${AMARELO}[AVISO] SSL não configurado automaticamente (e-mail ou domínio padrão ausentes).${NC}"
+  echo "        Depois de configurar o DNS e o e-mail, rode: sudo certbot --nginx -d $DOMINIO"
+fi
 
 # ── 13. Firewall ──────────────────────────────────────
 info "Configurando firewall..."
@@ -167,8 +197,7 @@ echo "================================================"
 echo ""
 echo "  Acesse: https://${DOMINIO}"
 echo ""
-echo "  Login admin:        admin / admin123"
-echo "  Integrador teste:   joao.integrador / senha123"
+echo "  Login admin padrão: admin / admin123"
 echo ""
 echo "  Comandos úteis:"
 echo "    pm2 logs randoli         — ver logs em tempo real"

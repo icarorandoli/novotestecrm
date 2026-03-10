@@ -5,6 +5,7 @@ import { serveStatic } from "./static";
 import { createServer } from "http";
 import { setupWebSocket } from "./websocket";
 import { seedDatabase } from "./seed";
+import { initLicense, licenseMiddleware, licenseStatusHandler } from "./middleware/license";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -63,7 +64,18 @@ app.use((req, res, next) => {
   next();
 });
 
+// ─── LICENÇA ──────────────────────────────────────────────────────────────────
+// Rota pública de status (usada pelo banner no frontend)
+app.get("/api/license-status", licenseStatusHandler);
+
+// Middleware que bloqueia escrita se licença inválida/expirada
+app.use(licenseMiddleware);
+// ──────────────────────────────────────────────────────────────────────────────
+
 (async () => {
+  // Verifica licença antes de subir o servidor
+  await initLicense();
+
   await registerRoutes(httpServer, app);
   setupWebSocket(httpServer);
   await seedDatabase();
@@ -90,9 +102,6 @@ app.use((req, res, next) => {
     return res.status(status).json({ message });
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
   if (process.env.NODE_ENV === "production") {
     serveStatic(app);
   } else {
@@ -100,10 +109,6 @@ app.use((req, res, next) => {
     await setupVite(httpServer, app);
   }
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || "5000", 10);
   httpServer.listen(
     {
