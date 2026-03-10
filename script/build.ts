@@ -1,12 +1,20 @@
 import { build as esbuild } from "esbuild";
 import { build as viteBuild } from "vite";
-import { rm, readFile, copyFile } from "fs/promises";
+import { rm, readFile, copyFile, access } from "fs/promises";
+import { constants as fsConstants } from "fs";
 
 async function buildAll() {
   await rm("dist", { recursive: true, force: true });
 
-  console.log("building client...");
-  await viteBuild();
+  // Tenta buildar o client apenas se existir entrada do frontend.
+  // Se não existir (por exemplo, uso só como API), continua e builda apenas o servidor.
+  try {
+    await access("client/index.html", fsConstants.F_OK);
+    console.log("building client...");
+    await viteBuild();
+  } catch {
+    console.warn("[build] client/index.html não encontrado, pulando build do client (API only).");
+  }
 
   console.log("building server...");
   const pkg = JSON.parse(await readFile("package.json", "utf-8"));
